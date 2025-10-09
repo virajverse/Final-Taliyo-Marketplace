@@ -1,14 +1,14 @@
 # Dependencies
 node_modules/
-admin-panel/node_modules/
 /.pnp
 .pnp.js
 
 # Production builds
 .next/
-admin-panel/.next/
 /build
 /dist
+
+# Admin Panel (separate repository)
 admin-panel/
 
 # Environment variables
@@ -17,16 +17,11 @@ admin-panel/
 .env.development.local
 .env.test.local
 .env.production.local
-admin-panel/.env
-admin-panel/.env.local
-admin-panel/.env.development.local
-admin-panel/.env.test.local
-admin-panel/.env.production.local
 
 # Logs
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
+yarn-error
 lerna-debug.log*
 .pnpm-debug.log*
 
