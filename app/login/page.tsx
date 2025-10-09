@@ -52,16 +52,16 @@ export default function Login() {
     setTimeout(() => {
       if (loginForm.email && loginForm.password) {
         const userData = {
-          name: 'Rahul Sharma',
+          name: loginForm.email.split('@')[0], // Use email prefix as name
           email: loginForm.email,
-          phone: '+91 98765 43210',
-          location: 'Delhi NCR, India',
+          phone: '',
+          location: '',
           avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
           joinDate: new Date().toISOString(),
           stats: {
-            bookings: 12,
-            favorites: 8,
-            reviews: 5
+            bookings: 0,
+            favorites: 0,
+            reviews: 0
           }
         };
         
@@ -359,17 +359,7 @@ export default function Login() {
           </form>
         )}
 
-        {/* Demo Credentials */}
-        <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-200">
-          <h3 className="font-medium text-blue-900 mb-2">Demo Credentials</h3>
-          <p className="text-sm text-blue-800 mb-2">
-            For testing, you can use any email and password combination.
-          </p>
-          <div className="text-xs text-blue-700">
-            <p>Email: demo@taliyo.com</p>
-            <p>Password: demo123</p>
-          </div>
-        </div>
+
       </div>
 
       {/* Toast Notification */}

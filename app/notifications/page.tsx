@@ -19,42 +19,13 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    // Mock notifications data
-    const mockNotifications: Notification[] = [
-      {
-        id: '1',
-        type: 'booking',
-        title: 'Booking Confirmed',
-        message: 'Your home cleaning service has been confirmed for tomorrow at 10:00 AM.',
-        time: '2 hours ago',
-        read: false
-      },
-      {
-        id: '2',
-        type: 'reminder',
-        title: 'Service Reminder',
-        message: 'Your AC maintenance is scheduled for today at 2:00 PM.',
-        time: '4 hours ago',
-        read: false
-      },
-      {
-        id: '3',
-        type: 'promotion',
-        title: 'Special Offer',
-        message: 'Get 20% off on your next plumbing service. Use code SAVE20.',
-        time: '1 day ago',
-        read: true
-      },
-      {
-        id: '4',
-        type: 'system',
-        title: 'Profile Updated',
-        message: 'Your profile information has been successfully updated.',
-        time: '2 days ago',
-        read: true
-      }
-    ];
-    setNotifications(mockNotifications);
+    // Load notifications from localStorage or API
+    const savedUser = localStorage.getItem('taliyo_user');
+    if (savedUser) {
+      // In production, fetch notifications from API
+      // For now, show empty state for new users
+      setNotifications([]);
+    }
   }, []);
 
   const markAsRead = (id: string) => {

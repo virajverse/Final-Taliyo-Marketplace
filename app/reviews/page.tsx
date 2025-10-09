@@ -19,34 +19,14 @@ export default function Reviews() {
   const [reviews, setReviews] = useState<Review[]>([]);
 
   useEffect(() => {
-    // Mock reviews data
-    const mockReviews: Review[] = [
-      {
-        id: '1',
-        serviceName: 'Home Cleaning Service',
-        rating: 5,
-        comment: 'Excellent service! Very professional and thorough cleaning.',
-        date: '2024-01-15',
-        serviceProvider: 'CleanPro Services'
-      },
-      {
-        id: '2',
-        serviceName: 'Plumbing Repair',
-        rating: 4,
-        comment: 'Quick response and fixed the issue efficiently.',
-        date: '2024-01-10',
-        serviceProvider: 'Fix-It Fast'
-      },
-      {
-        id: '3',
-        serviceName: 'AC Maintenance',
-        rating: 5,
-        comment: 'Great service, AC is working perfectly now.',
-        date: '2024-01-05',
-        serviceProvider: 'Cool Air Solutions'
-      }
-    ];
-    setReviews(mockReviews);
+    // Load user reviews from localStorage or API
+    const savedUser = localStorage.getItem('taliyo_user');
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      // In production, fetch reviews from API
+      // For now, show empty state for new users
+      setReviews([]);
+    }
   }, []);
 
   const renderStars = (rating: number) => {
