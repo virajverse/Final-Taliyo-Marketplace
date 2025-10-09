@@ -59,27 +59,7 @@ export default function Profile() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  // Handle sign in
-  const handleSignIn = () => {
-    const userData = {
-      name: 'Rahul Sharma',
-      email: 'rahul.sharma@gmail.com',
-      phone: '+91 98765 43210',
-      location: 'Delhi NCR, India',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      joinDate: new Date().toISOString(),
-      stats: {
-        bookings: 12,
-        favorites: 8,
-        reviews: 5
-      }
-    };
-    
-    localStorage.setItem('taliyo_user', JSON.stringify(userData));
-    setUser(userData);
-    setIsLoggedIn(true);
-    showToastMessage('Welcome to Taliyo! 🎉');
-  };
+
 
   // Handle sign out
   const handleSignOut = () => {
@@ -191,14 +171,14 @@ export default function Profile() {
                   href="/login"
                   className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200 text-center block"
                 >
-                  Sign In / Create Account
+                  Sign In
                 </Link>
-                <button
-                  onClick={handleSignIn}
-                  className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                <Link
+                  href="/login"
+                  className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors text-center block"
                 >
-                  Quick Demo Login
-                </button>
+                  Create Account
+                </Link>
               </div>
             </div>
           </div>
