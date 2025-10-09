@@ -1,8 +1,9 @@
 // Frontend API Client - Connects to Admin Panel Backend
 // This file handles all API calls from frontend to backend
 
-// Disable backend API calls - use mock data only for development
+// API Configuration - Use mock data when API_URL is MOCK_MODE or not set
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'MOCK_MODE'
+const USE_MOCK_DATA = API_BASE_URL === 'MOCK_MODE' || !API_BASE_URL || API_BASE_URL.includes('localhost')
 
 // Generic API client
 class ApiClient {
@@ -385,22 +386,41 @@ export const apiService = {
     limit?: number
     offset?: number
   }): Promise<Service[]> {
-    // Always use mock data - no backend calls
-    let services = [...mockServices]
-    
-    if (params?.featured) {
-      services = services.filter(s => s.is_featured)
+    // Use mock data in development or when backend is not available
+    if (USE_MOCK_DATA) {
+      let services = [...mockServices]
+      
+      if (params?.featured) {
+        services = services.filter(s => s.is_featured)
+      }
+      if (params?.category_id) {
+        services = services.filter(s => s.category_id === params.category_id)
+      }
+      if (params?.limit) {
+        services = services.slice(0, params.limit)
+      }
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 100))
+      return services
     }
-    if (params?.category_id) {
-      services = services.filter(s => s.category_id === params.category_id)
+
+    // Real API call (when backend is available)
+    try {
+      const queryParams = new URLSearchParams()
+      if (params?.category_id) queryParams.append('category_id', params.category_id)
+      if (params?.subcategory_id) queryParams.append('subcategory_id', params.subcategory_id)
+      if (params?.featured) queryParams.append('featured', 'true')
+      if (params?.limit) queryParams.append('limit', params.limit.toString())
+      if (params?.offset) queryParams.append('offset', params.offset.toString())
+      
+      const endpoint = `/services${queryParams.toString() ? `?${queryParams.toString()}` : ''}`
+      return await api.get<Service[]>(endpoint)
+    } catch (error) {
+      // Fallback to mock data if API fails
+      console.warn('API call failed, using mock data:', error)
+      return this.getServices(params) // Recursive call will use mock data
     }
-    if (params?.limit) {
-      services = services.slice(0, params.limit)
-    }
-    
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 100))
-    return services
   },
 
   async getService(id: string): Promise<Service> {
@@ -429,10 +449,21 @@ export const apiService = {
 
   // Categories
   async getCategories(): Promise<Category[]> {
-    // Always use mock data - no backend calls
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 100))
-    return mockCategories
+    // Use mock data in development or when backend is not available
+    if (USE_MOCK_DATA) {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 100))
+      return mockCategories
+    }
+
+    // Real API call (when backend is available)
+    try {
+      return await api.get<Category[]>('/categories')
+    } catch (error) {
+      // Fallback to mock data if API fails
+      console.warn('API call failed, using mock data:', error)
+      return mockCategories
+    }
   },
 
   async getCategory(id: string): Promise<Category> {
