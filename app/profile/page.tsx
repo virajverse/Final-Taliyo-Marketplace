@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { 
@@ -22,13 +22,93 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
+interface UserData {
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  avatar: string;
+  joinDate: string;
+  stats: {
+    bookings: number;
+    favorites: number;
+    reviews: number;
+  };
+}
+
 export default function Profile() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Toggle this for demo
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Check for existing user session on component mount
+  useEffect(() => {
+    const savedUser = localStorage.getItem('taliyo_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // Show toast notification
+  const showToastMessage = (message: string) => {
+    setToastMessage(message);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  // Handle sign in
+  const handleSignIn = () => {
+    const userData = {
+      name: 'Rahul Sharma',
+      email: 'rahul.sharma@gmail.com',
+      phone: '+91 98765 43210',
+      location: 'Delhi NCR, India',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      joinDate: new Date().toISOString(),
+      stats: {
+        bookings: 12,
+        favorites: 8,
+        reviews: 5
+      }
+    };
+    
+    localStorage.setItem('taliyo_user', JSON.stringify(userData));
+    setUser(userData);
+    setIsLoggedIn(true);
+    showToastMessage('Welcome to Taliyo! 🎉');
+  };
+
+  // Handle sign out
+  const handleSignOut = () => {
+    localStorage.removeItem('taliyo_user');
+    setUser(null);
+    setIsLoggedIn(false);
+    showToastMessage('Signed out successfully');
+  };
+
+  // Handle edit profile
+  const handleEditProfile = () => {
+    if (isEditing) {
+      showToastMessage('Profile updated successfully! ✅');
+    }
+    setIsEditing(!isEditing);
+  };
+
+  // Update user data
+  const updateUser = (field: keyof UserData, value: string) => {
+    if (!user) return;
+    const updatedUser = { ...user, [field]: value };
+    setUser(updatedUser);
+    localStorage.setItem('taliyo_user', JSON.stringify(updatedUser));
+  };
 
   const stats = [
-    { label: 'Bookings', value: '12', icon: Clock, color: 'text-blue-500' },
-    { label: 'Favorites', value: '8', icon: Heart, color: 'text-red-500' },
-    { label: 'Reviews', value: '5', icon: Star, color: 'text-yellow-500' },
+    { label: 'Bookings', value: user?.stats?.bookings || '0', icon: Clock, color: 'text-blue-500' },
+    { label: 'Favorites', value: user?.stats?.favorites || '0', icon: Heart, color: 'text-red-500' },
+    { label: 'Reviews', value: user?.stats?.reviews || '0', icon: Star, color: 'text-yellow-500' },
   ];
 
   const menuItems = [
@@ -36,7 +116,7 @@ export default function Profile() {
       icon: Heart, 
       label: 'My Favorites', 
       href: '/wishlist',
-      count: '8', 
+      count: user?.stats?.favorites || '0', 
       color: 'text-red-500',
       bgColor: 'bg-red-50'
     },
@@ -44,7 +124,7 @@ export default function Profile() {
       icon: Clock, 
       label: 'Booking History', 
       href: '/orders',
-      count: '12', 
+      count: user?.stats?.bookings || '0', 
       color: 'text-blue-500',
       bgColor: 'bg-blue-50'
     },
@@ -52,7 +132,7 @@ export default function Profile() {
       icon: Star, 
       label: 'My Reviews', 
       href: '/reviews',
-      count: '5', 
+      count: user?.stats?.reviews || '0', 
       color: 'text-yellow-500',
       bgColor: 'bg-yellow-50'
     },
@@ -108,12 +188,15 @@ export default function Profile() {
               
               <div className="space-y-3">
                 <button
-                  onClick={() => setIsLoggedIn(true)}
+                  onClick={handleSignIn}
                   className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
                 >
                   Sign In
                 </button>
-                <button className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors">
+                <button 
+                  onClick={handleSignIn}
+                  className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors"
+                >
                   Create Account
                 </button>
               </div>
@@ -150,6 +233,15 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Toast Notification */}
+        {showToast && (
+          <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
+            <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
+              <span>{toastMessage}</span>
+            </div>
+          </div>
+        )}
+
         <BottomNavigation />
       </div>
     );
@@ -165,7 +257,7 @@ export default function Profile() {
           <div className="flex items-center gap-4 mb-4">
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
+                src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"}
                 alt="Profile"
                 className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
               />
@@ -175,15 +267,53 @@ export default function Profile() {
             </div>
             
             <div className="flex-1">
-              <h1 className="text-xl font-bold text-gray-900">Rahul Sharma</h1>
-              <p className="text-gray-600 text-sm">rahul.sharma@gmail.com</p>
-              <div className="flex items-center gap-2 mt-1">
-                <MapPin className="w-3 h-3 text-gray-400" />
-                <span className="text-xs text-gray-500">Delhi NCR, India</span>
-              </div>
+              {isEditing ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={user?.name || ''}
+                    onChange={(e) => updateUser('name', e.target.value)}
+                    className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
+                    placeholder="Your name"
+                  />
+                  <input
+                    type="email"
+                    value={user?.email || ''}
+                    onChange={(e) => updateUser('email', e.target.value)}
+                    className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
+                    placeholder="Your email"
+                  />
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3 h-3 text-gray-400" />
+                    <input
+                      type="text"
+                      value={user?.location || ''}
+                      onChange={(e) => updateUser('location', e.target.value)}
+                      className="text-xs text-gray-500 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none flex-1"
+                      placeholder="Your location"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
+                  <p className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <MapPin className="w-3 h-3 text-gray-400" />
+                    <span className="text-xs text-gray-500">{user?.location || 'Location not set'}</span>
+                  </div>
+                </>
+              )}
             </div>
 
-            <button className="bg-gray-100 text-gray-600 p-2 rounded-lg hover:bg-gray-200 transition-colors">
+            <button 
+              onClick={handleEditProfile}
+              className={`p-2 rounded-lg transition-colors ${
+                isEditing 
+                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
               <Edit3 className="w-4 h-4" />
             </button>
           </div>
@@ -192,7 +322,7 @@ export default function Profile() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2 text-gray-600">
               <Phone className="w-4 h-4" />
-              <span>+91 98765 43210</span>
+              <span>{user?.phone || 'Phone not set'}</span>
             </div>
             <div className="flex items-center gap-2 text-gray-600">
               <Mail className="w-4 h-4" />
@@ -240,13 +370,22 @@ export default function Profile() {
 
         {/* Logout Button */}
         <button 
-          onClick={() => setIsLoggedIn(false)}
+          onClick={handleSignOut}
           className="w-full bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors"
         >
           <LogOut className="w-5 h-5" />
           <span className="font-medium">Sign Out</span>
         </button>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
+            <span>{toastMessage}</span>
+          </div>
+        </div>
+      )}
 
       <BottomNavigation />
     </div>

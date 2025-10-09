@@ -9,6 +9,7 @@ admin-panel/node_modules/
 admin-panel/.next/
 /build
 /dist
+admin-panel/
 
 # Environment variables
 .env
