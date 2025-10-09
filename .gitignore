@@ -113,8 +113,9 @@ yarn.lock
 pnpm-lock.yaml
 
 # Documentation files (keep only README.md)
-*.md
-!README.md
+COMPILATION_FIXES.md
+PROFILE_IMPROVEMENTS.md
+GIT_SETUP_GUIDE.md
 
 # Supabase
 .supabase/
