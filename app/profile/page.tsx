@@ -187,17 +187,17 @@ export default function Profile() {
               <p className="text-gray-600 mb-6">Sign in to book services, save favorites, and track your orders</p>
               
               <div className="space-y-3">
-                <button
-                  onClick={handleSignIn}
-                  className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
+                <Link
+                  href="/login"
+                  className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200 text-center block"
                 >
-                  Sign In
-                </button>
-                <button 
+                  Sign In / Create Account
+                </Link>
+                <button
                   onClick={handleSignIn}
                   className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors"
                 >
-                  Create Account
+                  Quick Demo Login
                 </button>
               </div>
             </div>
