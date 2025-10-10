@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Star, MapPin, Clock, ArrowLeft, Phone, MessageCircle } from 'lucide-react';
+import IconMapper from '@/components/IconMapper';
 
 interface Service {
   id: string;
@@ -280,7 +281,13 @@ export default function ServiceDetail() {
         <div className="px-4 mb-6">
           <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
             <div className="flex items-center gap-3 mb-4">
-              <div className="text-3xl">💬</div>
+              <div>
+                <IconMapper 
+                  iconName="chat" 
+                  size={32}
+                  animated={true}
+                />
+              </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-gray-900 mb-1">Contact Taliyo Team</h3>
                 <p className="text-sm text-gray-600">Get instant support and book this service</p>

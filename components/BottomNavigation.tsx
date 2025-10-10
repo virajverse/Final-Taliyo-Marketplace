@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, FolderOpen, ShoppingCart, User } from 'lucide-react';
+import { HomeIcon, CategoryIcon, CartIcon, ProfileIcon } from './CustomIcons';
+import AnimatedIcon from './AnimatedIcon';
 
 export default function BottomNavigation() {
   const pathname = usePathname();
   
   const navItems = [
-    { path: '/', icon: Home, label: 'Home', emoji: '🏠' },
-    { path: '/categories', icon: FolderOpen, label: 'Category', emoji: '📂' },
-    { path: '/cart', icon: ShoppingCart, label: 'Cart', emoji: '🛒' },
-    { path: '/profile', icon: User, label: 'Profile', emoji: '👤' },
+    { path: '/', icon: HomeIcon, label: 'Home' },
+    { path: '/categories', icon: CategoryIcon, label: 'Category' },
+    { path: '/cart', icon: CartIcon, label: 'Cart' },
+    { path: '/profile', icon: ProfileIcon, label: 'Profile' },
   ];
 
   return (
@@ -19,6 +20,7 @@ export default function BottomNavigation() {
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
+          const IconComponent = item.icon;
           
           return (
             <Link
@@ -30,7 +32,11 @@ export default function BottomNavigation() {
                   : 'text-gray-500 hover:text-blue-600'
               }`}
             >
-              <div className="text-lg mb-1">{item.emoji}</div>
+              <div className="mb-1">
+                <AnimatedIcon size={20} hoverScale={1.2} clickScale={0.9}>
+                  <IconComponent size={20} />
+                </AnimatedIcon>
+              </div>
               <span className="text-xs font-medium">{item.label}</span>
             </Link>
           );

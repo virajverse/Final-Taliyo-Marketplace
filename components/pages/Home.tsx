@@ -6,6 +6,8 @@ import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import Link from 'next/link';
 import { TrendingUp, Star, Shield, Users, MessageCircle } from 'lucide-react';
+import IconMapper from '@/components/IconMapper';
+import { SearchIcon } from '@/components/CustomIcons';
 
 interface Service {
   id: string;
@@ -78,14 +80,14 @@ export default function Home() {
     console.log('Toggled wishlist for service:', serviceId);
   };
 
-  const getIconEmoji = (iconName: string) => {
+  const getIconName = (iconName: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': '💻', 'mobile': '📱', 'design': '🎨', 'home': '🏠',
-      'repair': '🔧', 'electrical': '⚡', 'garden': '🌱', 'education': '📚',
-      'beauty': '💄', 'fitness': '💪', 'photography': '📸', 'writing': '✍️',
-      'music': '🎵', 'cooking': '👨‍🍳', 'marketing': '📈', 'consulting': '💼',
+      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
+      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
+      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
+      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
     };
-    return iconMap[iconName] || '📦';
+    return iconMap[iconName] || 'package';
   };
 
   const handleWhatsAppSupport = () => {
@@ -166,8 +168,12 @@ export default function Home() {
                   href={`/categories/${category.id}`}
                   className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
                 >
-                  <div className="text-2xl mb-2">
-                    {getIconEmoji(category.icon || 'default')}
+                  <div className="mb-2">
+                    <IconMapper 
+                      iconName={getIconName(category.icon || 'default')} 
+                      size={28}
+                      animated={true}
+                    />
                   </div>
                   <h4 className="font-semibold text-gray-900 text-sm mb-1">
                     {category.name}
@@ -189,7 +195,13 @@ export default function Home() {
           
           {featuredServices.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
-              <div className="text-4xl mb-4">🔍</div>
+              <div className="mb-4">
+                <IconMapper 
+                  iconName="search" 
+                  size={48}
+                  animated={true}
+                />
+              </div>
               <h4 className="font-semibold text-gray-900 mb-2">No Services Yet</h4>
               <p className="text-gray-600 text-sm">Services will appear here soon.</p>
             </div>

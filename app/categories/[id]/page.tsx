@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import { ArrowLeft, Package } from 'lucide-react';
+import IconMapper from '@/components/IconMapper';
 
 interface Service {
   id: string;
@@ -79,14 +80,14 @@ export default function CategoryDetail() {
     console.log('Toggled wishlist for service:', serviceId);
   };
 
-  const getIconEmoji = (iconName?: string) => {
+  const getIconName = (iconName?: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': '💻', 'mobile': '📱', 'design': '🎨', 'home': '🏠',
-      'repair': '🔧', 'electrical': '⚡', 'garden': '🌱', 'education': '📚',
-      'beauty': '💄', 'fitness': '💪', 'photography': '📸', 'writing': '✍️',
-      'music': '🎵', 'cooking': '👨‍🍳', 'marketing': '📈', 'consulting': '💼',
+      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
+      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
+      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
+      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
     };
-    return iconMap[iconName || 'default'] || '📦';
+    return iconMap[iconName || 'default'] || 'package';
   };
 
   if (loading) {
@@ -148,8 +149,12 @@ export default function CategoryDetail() {
         {/* Category Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
-            <div className="text-4xl">
-              {getIconEmoji(category.icon)}
+            <div>
+              <IconMapper 
+                iconName={getIconName(category.icon)} 
+                size={40}
+                animated={true}
+              />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>

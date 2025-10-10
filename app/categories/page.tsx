@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { ArrowRight, Package } from 'lucide-react';
 import Link from 'next/link';
+import IconMapper from '@/components/IconMapper';
 
 interface Category {
   id: string;
@@ -40,14 +41,14 @@ export default function Categories() {
     }
   };
 
-  const getIconEmoji = (iconName: string) => {
+  const getIconName = (iconName: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': '💻', 'mobile': '📱', 'design': '🎨', 'home': '🏠',
-      'repair': '🔧', 'electrical': '⚡', 'garden': '🌱', 'education': '📚',
-      'beauty': '💄', 'fitness': '💪', 'photography': '📸', 'writing': '✍️',
-      'music': '🎵', 'cooking': '👨‍🍳', 'marketing': '📈', 'consulting': '💼',
+      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
+      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
+      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
+      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
     };
-    return iconMap[iconName] || '📦';
+    return iconMap[iconName] || 'package';
   };
 
   if (loading) {
@@ -94,8 +95,12 @@ export default function Categories() {
                 href={`/categories/${category.id}`}
                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
               >
-                <div className="text-3xl mb-3">
-                  {category.icon ? getIconEmoji(category.icon) : '📦'}
+                <div className="mb-3">
+                  <IconMapper 
+                    iconName={category.icon ? getIconName(category.icon) : 'package'} 
+                    size={32}
+                    animated={true}
+                  />
                 </div>
                 <h3 className="font-semibold text-gray-900 text-sm mb-1">
                   {category.name}
