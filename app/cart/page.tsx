@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import React from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { ShoppingCart, Trash2, Plus, Minus, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import BookingModal from '@/components/BookingModal';
 
 interface CartItem {
   id: number;
@@ -19,6 +21,8 @@ interface CartItem {
 }
 
 export default function Cart() {
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<any>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([
     {
       id: 1,
@@ -42,6 +46,19 @@ export default function Cart() {
       quantity: 1
     }
   ]);
+
+  // Load cart from localStorage on component mount
+  React.useEffect(() => {
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      setCartItems(JSON.parse(savedCart));
+    }
+  }, []);
+
+  // Save cart to localStorage whenever cartItems change
+  React.useEffect(() => {
+    localStorage.setItem('cart', JSON.stringify(cartItems));
+  }, [cartItems]);
 
   const updateQuantity = (id: number, newQuantity: number) => {
     if (newQuantity === 0) {
@@ -194,13 +211,17 @@ export default function Cart() {
             </div>
             <button
               onClick={() => {
-                const message = `Hi! I want to book these services:\n\n${cartItems.map(item => 
-                  `Service: ${item.title}\nPrice: ₹${getItemPrice(item).toLocaleString()} x ${item.quantity}\nProvider: ${item.provider_name}\n`
-                ).join('\n')}\nTotal: ₹${total.toLocaleString()}\n\nPlease confirm the booking details.`;
-                
-                const phoneNumber = '+917042523611';
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
+                // Create a combined service object for booking modal
+                const combinedService = {
+                  id: 'cart-booking',
+                  title: `${cartItems.length} Service${cartItems.length > 1 ? 's' : ''} from Cart`,
+                  price_min: subtotal,
+                  price_max: total,
+                  provider_name: 'Multiple Providers',
+                  rating_average: 4.5
+                };
+                setSelectedService(combinedService);
+                setIsBookingModalOpen(true);
               }}
               className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-green-600 transition-colors flex items-center gap-2"
             >
@@ -212,6 +233,17 @@ export default function Cart() {
       </div>
 
       <BottomNavigation />
+      
+      {selectedService && (
+        <BookingModal
+          isOpen={isBookingModalOpen}
+          onClose={() => {
+            setIsBookingModalOpen(false);
+            setSelectedService(null);
+          }}
+          service={selectedService}
+        />
+      )}
     </div>
   );
 }

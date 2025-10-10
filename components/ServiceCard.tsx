@@ -39,6 +39,7 @@ export default function ServiceCard({
 }: ServiceCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
   const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
   const primaryImage = images[0] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
 
@@ -63,6 +64,40 @@ export default function ServiceCard({
       return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
     }
     return `${minutes}m`;
+  };
+
+  const handleAddToCart = () => {
+    // Get existing cart from localStorage
+    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    
+    // Check if item already exists
+    const existingItemIndex = existingCart.findIndex((item: any) => item.service_id === service.id);
+    
+    if (existingItemIndex > -1) {
+      // Increase quantity
+      existingCart[existingItemIndex].quantity += 1;
+    } else {
+      // Add new item
+      const cartItem = {
+        id: Date.now(),
+        service_id: service.id,
+        title: service.title,
+        price_min: service.price_min,
+        price_max: service.price_max,
+        price_type: service.price_type,
+        images: Array.isArray(service.images) ? service.images[0] : service.images,
+        provider_name: service.provider_name,
+        quantity: 1
+      };
+      existingCart.push(cartItem);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('cart', JSON.stringify(existingCart));
+    
+    // Show feedback
+    setIsAddedToCart(true);
+    setTimeout(() => setIsAddedToCart(false), 2000);
   };
 
   return (
@@ -140,10 +175,14 @@ export default function ServiceCard({
               {service.price_type === 'hourly' && <span className="text-xs font-normal">/hr</span>}
             </div>
             <button
-              onClick={() => setIsBookingModalOpen(true)}
-              className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-full text-xs font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+              onClick={handleAddToCart}
+              className={`px-4 py-2 rounded-full text-xs font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+                isAddedToCart 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-gradient-to-r from-blue-500 to-green-500 text-white'
+              }`}
             >
-              Book Now
+              {isAddedToCart ? '✓ Added' : 'Add to Cart'}
             </button>
           </div>
         </div>

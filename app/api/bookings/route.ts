@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       budget_range: formData.get('budgetRange') as string,
       delivery_preference: formData.get('deliveryPreference') as string,
       additional_notes: formData.get('additionalNotes') as string || null,
+      cart_items: formData.get('cartItems') as string || null,
       status: 'pending',
       // Also populate legacy fields for compatibility
       customer_name: formData.get('fullName') as string,
