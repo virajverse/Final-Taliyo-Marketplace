@@ -104,12 +104,14 @@ export default function ServiceCard({
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
         <div className="relative">
-          <img
-            src={imageError ? 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop' : primaryImage}
-            alt={service.title}
-            onError={() => setImageError(true)}
-            className="w-full h-40 object-cover"
-          />
+          <Link href={`/services/${service.id}`} className="block">
+            <img
+              src={imageError ? 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop' : primaryImage}
+              alt={service.title}
+              onError={() => setImageError(true)}
+              className="w-full h-40 object-cover"
+            />
+          </Link>
           <button
             onClick={() => onToggleWishlist?.(service.id)}
             className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${
@@ -124,7 +126,9 @@ export default function ServiceCard({
 
         <div className="p-4">
           <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
-            {service.title}
+            <Link href={`/services/${service.id}`} className="hover:underline">
+              {service.title}
+            </Link>
           </h3>
           
           {service.description && (
