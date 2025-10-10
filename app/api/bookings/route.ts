@@ -1,0 +1,158 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    
+    // Extract form fields
+    const bookingData = {
+      service_id: formData.get('serviceId') as string,
+      service_title: formData.get('serviceTitle') as string,
+      service_price: formData.get('servicePrice') as string,
+      provider_name: formData.get('providerName') as string,
+      full_name: formData.get('fullName') as string,
+      phone: formData.get('phone') as string,
+      email: formData.get('email') as string || null,
+      whatsapp_number: formData.get('whatsappNumber') as string || null,
+      requirements: formData.get('requirements') as string,
+      budget_range: formData.get('budgetRange') as string,
+      delivery_preference: formData.get('deliveryPreference') as string,
+      additional_notes: formData.get('additionalNotes') as string || null,
+      status: 'pending',
+      // Also populate legacy fields for compatibility
+      customer_name: formData.get('fullName') as string,
+      customer_phone: formData.get('phone') as string,
+      customer_email: formData.get('email') as string || null,
+      message: formData.get('requirements') as string,
+      created_at: new Date().toISOString()
+    };
+
+    // Handle file uploads
+    const files = [];
+    let fileIndex = 0;
+    while (formData.get(`file_${fileIndex}`)) {
+      const file = formData.get(`file_${fileIndex}`) as File;
+      if (file && file.size > 0) {
+        try {
+          // Upload file to Supabase Storage
+          const fileName = `${Date.now()}_${file.name}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('booking-files')
+            .upload(fileName, file);
+
+          if (uploadError) {
+            console.error('File upload error:', uploadError);
+            // Store file info without upload if bucket doesn't exist
+            files.push({
+              name: file.name,
+              path: null,
+              size: file.size,
+              type: file.type,
+              error: 'Storage bucket not configured'
+            });
+          } else {
+            files.push({
+              name: file.name,
+              path: uploadData.path,
+              size: file.size,
+              type: file.type
+            });
+          }
+        } catch (error) {
+          console.error('File upload error:', error);
+          files.push({
+            name: file.name,
+            path: null,
+            size: file.size,
+            type: file.type,
+            error: 'Upload failed'
+          });
+        }
+      }
+      fileIndex++;
+    }
+
+    // Insert booking into database
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert([{
+        ...bookingData,
+        files: files.length > 0 ? JSON.stringify(files) : null
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json(
+        { error: 'Failed to create booking' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(
+      { 
+        success: true, 
+        booking: data,
+        message: 'Booking created successfully' 
+      },
+      { status: 201 }
+    );
+
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const status = searchParams.get('status');
+    
+    let query = supabase
+      .from('bookings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error, count } = await query
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (error) {
+      console.error('Database error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch bookings' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      bookings: data,
+      total: count,
+      page,
+      limit
+    });
+
+  } catch (error) {
+    console.error('API error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

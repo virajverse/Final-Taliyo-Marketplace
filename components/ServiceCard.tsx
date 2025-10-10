@@ -3,6 +3,7 @@
 import { Star, MapPin, Clock, Heart } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import BookingModal from './BookingModal';
 
 interface ServiceCardProps {
   service: {
@@ -37,6 +38,7 @@ export default function ServiceCard({
   isInWishlist = false 
 }: ServiceCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
   const primaryImage = images[0] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
 
@@ -64,103 +66,94 @@ export default function ServiceCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <div className="relative">
-        <img
-          src={imageError ? 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop' : primaryImage}
-          alt={service.title}
-          onError={() => setImageError(true)}
-          className="w-full h-40 object-cover"
-        />
-        <button
-          onClick={() => onToggleWishlist?.(service.id)}
-          className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${
-            isInWishlist 
-              ? 'bg-red-500 text-white' 
-              : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500'
-          }`}
-        >
-          <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
-        </button>
-      </div>
-
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
-          {service.title}
-        </h3>
-        
-        {service.description && (
-          <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-            {service.description}
-          </p>
-        )}
-
-        {service.provider_name && (
-          <div className="flex items-center gap-2 mb-3">
-            <img
-              src={service.provider_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'}
-              alt={service.provider_name}
-              className="w-6 h-6 rounded-full object-cover"
-            />
-            <span className="text-xs text-gray-600">by {service.provider_name}</span>
-          </div>
-        )}
-
-        <div className="flex items-center gap-1 mb-3">
-          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-          <span className="text-sm font-medium text-gray-900">
-            {service.rating_average.toFixed(1)}
-          </span>
-          <span className="text-xs text-gray-500">
-            ({service.rating_count})
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-          {(service.location || service.is_remote) && (
-            <div className="flex items-center gap-1">
-              <MapPin className="w-3 h-3" />
-              <span>{service.is_remote ? 'Remote' : service.location}</span>
-            </div>
-          )}
-          {service.duration_minutes && (
-            <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              <span>{formatDuration()}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-bold text-blue-600">
-            {formatPrice()}
-            {service.price_type === 'hourly' && <span className="text-xs font-normal">/hr</span>}
-          </div>
+    <>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
+        <div className="relative">
+          <img
+            src={imageError ? 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop' : primaryImage}
+            alt={service.title}
+            onError={() => setImageError(true)}
+            className="w-full h-40 object-cover"
+          />
           <button
-            onClick={async () => {
-              const message = `Hi! I want to book this service:\n\n📦 *${service.title}*\n💰 Price: ${formatPrice()}\n⭐ Rating: ${service.rating_average}/5\n${service.provider_name ? `👤 Provider: ${service.provider_name}\n` : ''}\nPlease provide more details.`;
-              
-              // Track WhatsApp click
-              try {
-                const { apiService } = await import('@/lib/api');
-                await apiService.trackEvent({
-                  service_id: service.id,
-                  event_type: 'whatsapp_click'
-                });
-              } catch (error) {
-                console.warn('Failed to track event:', error);
-              }
-              
-              const phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
-              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-              window.open(whatsappUrl, '_blank');
-            }}
-            className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-full text-xs font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+            onClick={() => onToggleWishlist?.(service.id)}
+            className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${
+              isInWishlist 
+                ? 'bg-red-500 text-white' 
+                : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500'
+            }`}
           >
-            Book Now
+            <Heart className={`w-4 h-4 ${isInWishlist ? 'fill-current' : ''}`} />
           </button>
         </div>
+
+        <div className="p-4">
+          <h3 className="font-semibold text-gray-900 text-sm mb-2 line-clamp-2">
+            {service.title}
+          </h3>
+          
+          {service.description && (
+            <p className="text-xs text-gray-600 mb-3 line-clamp-2">
+              {service.description}
+            </p>
+          )}
+
+          {service.provider_name && (
+            <div className="flex items-center gap-2 mb-3">
+              <img
+                src={service.provider_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'}
+                alt={service.provider_name}
+                className="w-6 h-6 rounded-full object-cover"
+              />
+              <span className="text-xs text-gray-600">by {service.provider_name}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1 mb-3">
+            <Star className="w-4 h-4 text-yellow-400 fill-current" />
+            <span className="text-sm font-medium text-gray-900">
+              {service.rating_average.toFixed(1)}
+            </span>
+            <span className="text-xs text-gray-500">
+              ({service.rating_count})
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
+            {(service.location || service.is_remote) && (
+              <div className="flex items-center gap-1">
+                <MapPin className="w-3 h-3" />
+                <span>{service.is_remote ? 'Remote' : service.location}</span>
+              </div>
+            )}
+            {service.duration_minutes && (
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>{formatDuration()}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-bold text-blue-600">
+              {formatPrice()}
+              {service.price_type === 'hourly' && <span className="text-xs font-normal">/hr</span>}
+            </div>
+            <button
+              onClick={() => setIsBookingModalOpen(true)}
+              className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-4 py-2 rounded-full text-xs font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105"
+            >
+              Book Now
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+      
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        service={service}
+      />
+    </>
   );
 }

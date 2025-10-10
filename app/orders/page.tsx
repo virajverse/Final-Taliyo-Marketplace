@@ -128,7 +128,7 @@ export default function Orders() {
   });
 
   const handleContactProvider = (order: Order) => {
-    const message = `Hi ${order.providerName}! Regarding my booking:\n\n📦 Service: ${order.serviceTitle}\n🆔 Order ID: ${order.id}\n📅 Scheduled: ${order.scheduledDate}\n\nI have a question about the service.`;
+    const message = `Hi ${order.providerName}! Regarding my booking:\n\nService: ${order.serviceTitle}\nOrder ID: ${order.id}\nScheduled: ${order.scheduledDate}\n\nI have a question about the service.`;
     const whatsappUrl = `https://wa.me/${order.phone.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

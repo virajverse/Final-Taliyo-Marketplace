@@ -98,7 +98,7 @@ export default function Wishlist() {
 
   const handleShare = () => {
     const message = `Check out my wishlist on Taliyo Marketplace:\n\n${wishlistItems.map(item => 
-      `📦 ${item.title} - ₹${item.price_min?.toLocaleString()}`
+      `${item.title} - ₹${item.price_min?.toLocaleString()}`
     ).join('\n')}\n\nDiscover amazing services at Taliyo!`;
     
     if (navigator.share) {
@@ -205,7 +205,7 @@ export default function Wishlist() {
             <button
               onClick={() => {
                 const message = `Hi! I'm interested in these services from my wishlist:\n\n${wishlistItems.map(item => 
-                  `📦 ${item.title}\n💰 ₹${item.price_min?.toLocaleString()} - ₹${item.price_max?.toLocaleString()}\n👤 ${item.provider_name}\n`
+                  `Service: ${item.title}\nPrice: ₹${item.price_min?.toLocaleString()} - ₹${item.price_max?.toLocaleString()}\nProvider: ${item.provider_name}\n`
                 ).join('\n')}\nPlease provide more details and quotes.`;
                 
                 const phoneNumber = '+917042523611';

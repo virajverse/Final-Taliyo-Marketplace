@@ -195,8 +195,8 @@ export default function Cart() {
             <button
               onClick={() => {
                 const message = `Hi! I want to book these services:\n\n${cartItems.map(item => 
-                  `📦 ${item.title}\n💰 ₹${getItemPrice(item).toLocaleString()} x ${item.quantity}\n👤 ${item.provider_name}\n`
-                ).join('\n')}\n💵 Total: ₹${total.toLocaleString()}\n\nPlease confirm the booking details.`;
+                  `Service: ${item.title}\nPrice: ₹${getItemPrice(item).toLocaleString()} x ${item.quantity}\nProvider: ${item.provider_name}\n`
+                ).join('\n')}\nTotal: ₹${total.toLocaleString()}\n\nPlease confirm the booking details.`;
                 
                 const phoneNumber = '+917042523611';
                 const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;

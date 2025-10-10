@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Star, MapPin, Clock, ArrowLeft, Phone, MessageCircle } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
+import BookingModal from '@/components/BookingModal';
 
 interface Service {
   id: string;
@@ -37,6 +38,7 @@ export default function ServiceDetail() {
   const router = useRouter();
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
 
   useEffect(() => {
@@ -104,32 +106,8 @@ export default function ServiceDetail() {
     return 'Price on request';
   };
 
-  const handleBookNow = async () => {
-    if (!service) return;
-    
-    const message = `Hi! I want to book this service:\n\n📦 *${service.title}*\n💰 Price: ${formatPrice()}\n⭐ Rating: ${service.rating_average}/5 (${service.rating_count} reviews)\n${service.provider_name ? `👤 Provider: ${service.provider_name}\n` : ''}${service.location ? `📍 Location: ${service.location}\n` : ''}${service.is_remote ? '🌐 Remote service available\n' : ''}\nPlease provide more details about this service.`;
-    
-    // Track WhatsApp click
-    try {
-      const { apiService } = await import('@/lib/api');
-      await apiService.trackEvent({
-        service_id: service.id,
-        event_type: 'whatsapp_click'
-      });
-      
-      // Also create a booking record
-      await apiService.createBooking({
-        service_id: service.id,
-        customer_phone: 'WhatsApp User',
-        message: message
-      });
-    } catch (error) {
-      console.warn('Failed to track booking:', error);
-    }
-    
-    const phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+  const handleBookNow = () => {
+    setIsBookingModalOpen(true);
   };
 
 
@@ -307,7 +285,7 @@ export default function ServiceDetail() {
               </button>
               <button
                 onClick={() => {
-                  const message = `Hi Taliyo Team! I need help with this service:\n\n📦 *${service.title}*\n💰 Price: ${formatPrice()}\n\nPlease assist me.`;
+                  const message = `Hi Taliyo Team! I need help with this service:\n\nService: *${service.title}*\nPrice: ${formatPrice()}\n\nPlease assist me.`;
                   const phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
                   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
                   window.open(whatsappUrl, '_blank');
@@ -329,11 +307,17 @@ export default function ServiceDetail() {
           className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
         >
           <MessageCircle className="w-5 h-5" />
-          Book via WhatsApp
+          Book Now
         </button>
       </div>
 
       <BottomNavigation />
+      
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        service={service!}
+      />
     </div>
   );
 }
