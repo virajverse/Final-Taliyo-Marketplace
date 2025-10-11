@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Star, MapPin, Clock, ArrowLeft, MessageCircle, ShoppingCart } from 'lucide-react';
 import BookingModal from '@/components/BookingModal';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Service {
   id: string;
@@ -35,6 +36,7 @@ interface Service {
 export default function ServiceDetail() {
   const params = useParams();
   const router = useRouter();
+  const { isLoggedIn, redirectToLogin } = useAuth();
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -106,12 +108,22 @@ export default function ServiceDetail() {
     return 'Price on request';
   };
 
+  const { user, isAuthenticated, showLoginModal } = useAuth();
+
   const handleBookNow = () => {
+    if (!isAuthenticated) {
+      showLoginModal();
+      return;
+    }
     setIsBookingModalOpen(true);
   };
 
   const handleAddToCart = () => {
     if (!service) return;
+    if (!isAuthenticated) {
+      showLoginModal();
+      return;
+    }
     try {
       const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
       const idx = existingCart.findIndex((item: any) => item.service_id === service.id);
@@ -287,20 +299,20 @@ export default function ServiceDetail() {
       </div>
 
       {/* Fixed Bottom Actions */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40">
-        <div className="max-w-3xl mx-auto px-2 flex gap-3">
+      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-2 z-40">
+        <div className="max-w-3xl mx-auto px-2 flex gap-2">
           <button
             onClick={handleAddToCart}
-            className={`flex-1 px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 ${isAddedToCart ? 'bg-green-500 text-white' : 'bg-gray-900 text-white'}`}
+            className={`flex-1 px-3 py-2 rounded-full font-medium text-sm md:text-base md:px-6 md:py-4 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-1 ${isAddedToCart ? 'bg-green-500 text-white' : 'bg-gray-900 text-white'}`}
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
             {isAddedToCart ? '✓ Added' : 'Add to Cart'}
           </button>
           <button
             onClick={handleBookNow}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-2 rounded-full font-medium text-sm md:text-base md:px-6 md:py-4 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-1"
           >
-            <MessageCircle className="w-5 h-5" />
+            <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
             Book Now
           </button>
         </div>

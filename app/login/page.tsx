@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import { useAuth } from '@/lib/AuthContext';
 import { 
   ArrowLeft, 
   Mail, 
@@ -44,38 +45,42 @@ export default function Login() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
+  const { login } = useAuth();
+  
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    // Simulate API call
-    setTimeout(() => {
-      if (loginForm.email && loginForm.password) {
-        const userData = {
-          name: loginForm.email.split('@')[0], // Use email prefix as name
-          email: loginForm.email,
-          phone: '',
-          location: '',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          joinDate: new Date().toISOString(),
-          stats: {
-            bookings: 0,
-            favorites: 0,
-            reviews: 0
-          }
-        };
-        
-        localStorage.setItem('taliyo_user', JSON.stringify(userData));
-        showToastMessage('Login successful! Welcome back! 🎉');
-        
-        setTimeout(() => {
-          router.push('/profile');
-        }, 1500);
-      } else {
-        showToastMessage('Please fill in all fields');
-      }
+    
+    // Validate form
+    if (!loginForm.email || !loginForm.password) {
+      showToastMessage('Please fill all fields');
       setLoading(false);
-    }, 1000);
+      return;
+    }
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Call login function from AuthContext
+      login({
+        id: '1',
+        name: 'Test User',
+        email: loginForm.email
+      });
+      
+      // Success message
+      showToastMessage('Login successful!');
+      
+      // Redirect to home page after successful login
+      setTimeout(() => {
+        router.push('/');
+      }, 1000);
+    } catch (error) {
+      showToastMessage('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignup = async (e: React.FormEvent) => {

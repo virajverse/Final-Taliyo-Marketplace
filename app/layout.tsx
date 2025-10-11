@@ -1,5 +1,10 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/lib/AuthContext';
+import ProtectedRoute from '@/components/ProtectedRoute';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
@@ -30,7 +35,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="no-scrollbar">{children}</body>
+      <body className={`no-scrollbar ${inter.className}`}>
+        <AuthProvider>
+          <ProtectedRoute>
+            {children}
+          </ProtectedRoute>
+        </AuthProvider>
+      </body>
     </html>
   );
 }

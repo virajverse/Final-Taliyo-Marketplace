@@ -5,6 +5,7 @@ export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const adminWhatsappNumber = '+917042523611'; // व्हाट्सएप नंबर जिस पर बुकिंग की जानकारी भेजी जाएगी
 
 // Check if Supabase is configured
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -112,11 +113,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // WhatsApp notification URL for admin
+    const adminMessage = `नई बुकिंग प्राप्त हुई है!\n\nसेवा: ${bookingData.service_title}\nग्राहक: ${bookingData.full_name}\nफोन: ${bookingData.phone}\nईमेल: ${bookingData.email || 'N/A'}\nआवश्यकताएँ: ${bookingData.requirements}\n\nकृपया जल्द से जल्द संपर्क करें।`;
+    const adminWhatsappUrl = `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(adminMessage)}`;
+
     return NextResponse.json(
       { 
         success: true, 
         booking: data,
-        message: 'Booking created successfully' 
+        message: 'Booking created successfully',
+        adminWhatsappUrl: adminWhatsappUrl
       },
       { status: 201 }
     );

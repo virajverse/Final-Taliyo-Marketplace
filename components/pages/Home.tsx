@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { TrendingUp, Star, Shield, Users, MessageCircle } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
 import { SearchIcon } from '@/components/CustomIcons';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Service {
   id: string;
@@ -49,6 +50,10 @@ export default function Home() {
   const [popularCategories, setPopularCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartCount] = useState(0);
+  
+  const handleWhatsAppClick = () => {
+    window.open('https://wa.me/+917042523611', '_blank');
+  };
 
   useEffect(() => {
     fetchData();
@@ -90,7 +95,14 @@ export default function Home() {
     return iconMap[iconName] || 'package';
   };
 
+  const { isLoggedIn, redirectToLogin } = useAuth();
+
   const handleWhatsAppSupport = () => {
+    if (!isLoggedIn) {
+      redirectToLogin();
+      return;
+    }
+    
     const message = `Hi! I need help with Taliyo services.`;
     const phoneNumber = '+917042523611';
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -126,6 +138,13 @@ export default function Home() {
             <div className="flex-1">
               <h2 className="text-xl font-bold mb-2">Find Trusted Services</h2>
               <p className="text-blue-100 text-sm">Connect with verified professionals near you</p>
+              <button
+                onClick={handleWhatsAppSupport}
+                className="mt-3 bg-white text-green-600 px-4 py-2 rounded-full text-sm font-bold hover:bg-green-50 transition-colors flex items-center gap-2 w-fit"
+              >
+                <MessageCircle className="w-4 h-4" />
+                +91 7042523611
+              </button>
             </div>
             <div className="text-4xl">👋</div>
           </div>

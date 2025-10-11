@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Service {
   id: string;
@@ -19,6 +20,7 @@ interface BookingModalProps {
 }
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service }) => {
+  const { isLoggedIn, redirectToLogin, user } = useAuth();
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -34,6 +36,31 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
   const [serverSuccess, setServerSuccess] = useState('');
+  
+  // अगर यूजर लॉग्ड इन नहीं है तो लॉगिन पेज पर रीडायरेक्ट करें
+  const handleAction = () => {
+    if (!isLoggedIn) {
+      onClose();
+      redirectToLogin();
+      return;
+    }
+  };
+  
+  // लॉगिन यूजर का डाटा फॉर्म में ऑटोफिल करें
+  useEffect(() => {
+    if (isLoggedIn && user) {
+      // लोकल स्टोरेज से यूजर का फोन नंबर प्राप्त करें (अगर उपलब्ध हो)
+      const userPhone = localStorage.getItem('userPhone') || '';
+      
+      setForm(prevForm => ({
+        ...prevForm,
+        fullName: user.name || '',
+        email: user.email || '',
+        phone: userPhone,
+        whatsappNumber: userPhone // व्हाट्सएप नंबर भी फोन नंबर से भरें
+      }));
+    }
+  }, [isLoggedIn, user]);
 
   const priceText = () => {
     const min = (service as any).price_min as number | undefined;
@@ -61,6 +88,25 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
     if (!selected.length) return;
     const merged = [...files, ...selected].slice(0, 5).filter(f => f.size <= 10 * 1024 * 1024);
     setFiles(merged);
+  };
+  
+  // फोन नंबर को लोकल स्टोरेज में सेव करें ताकि भविष्य में उपयोग किया जा सके
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    
+    if (name === 'phone') {
+      localStorage.setItem('userPhone', value);
+    }
+    
+    // Clear validation error when user types
+    if (validation[name]) {
+      setValidation(prev => {
+        const newValidation = { ...prev };
+        delete newValidation[name];
+        return newValidation;
+      });
+    }
   };
 
   const removeFile = (idx: number) => {
