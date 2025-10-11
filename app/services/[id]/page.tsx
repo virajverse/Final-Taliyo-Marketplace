@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { Star, MapPin, Clock, ArrowLeft, Phone, MessageCircle } from 'lucide-react';
-import IconMapper from '@/components/IconMapper';
+import { Star, MapPin, Clock, ArrowLeft, MessageCircle, ShoppingCart } from 'lucide-react';
 import BookingModal from '@/components/BookingModal';
 
 interface Service {
@@ -40,6 +39,7 @@ export default function ServiceDetail() {
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
 
   useEffect(() => {
     fetchService();
@@ -108,6 +108,34 @@ export default function ServiceDetail() {
 
   const handleBookNow = () => {
     setIsBookingModalOpen(true);
+  };
+
+  const handleAddToCart = () => {
+    if (!service) return;
+    try {
+      const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const idx = existingCart.findIndex((item: any) => item.service_id === service.id);
+      if (idx > -1) {
+        existingCart[idx].quantity += 1;
+      } else {
+        const firstImage = Array.isArray(service.images) ? service.images[0] : service.images;
+        const cartItem = {
+          id: Date.now(),
+          service_id: service.id,
+          title: service.title,
+          price_min: service.price_min,
+          price_max: service.price_max,
+          price_type: service.price_type,
+          images: firstImage,
+          provider_name: service.provider_name,
+          quantity: 1,
+        };
+        existingCart.push(cartItem);
+      }
+      localStorage.setItem('cart', JSON.stringify(existingCart));
+      setIsAddedToCart(true);
+      setTimeout(() => setIsAddedToCart(false), 2000);
+    } catch {}
   };
 
 
@@ -255,60 +283,27 @@ export default function ServiceDetail() {
           </div>
         )}
 
-        {/* Contact Taliyo Team */}
-        <div className="px-4 mb-6">
-          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div>
-                <IconMapper 
-                  iconName="chat" 
-                  size={32}
-                  animated={true}
-                />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">Contact Taliyo Team</h3>
-                <p className="text-sm text-gray-600">Get instant support and book this service</p>
-              </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  const phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+917042523611';
-                  window.location.href = `tel:${phoneNumber}`;
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-blue-500 text-white px-4 py-3 rounded-xl font-medium hover:bg-blue-600 transition-colors"
-              >
-                <Phone className="w-4 h-4" />
-                Call Us
-              </button>
-              <button
-                onClick={() => {
-                  const message = `Hi Taliyo Team! I need help with this service:\n\nService: *${service.title}*\nPrice: ${formatPrice()}\n\nPlease assist me.`;
-                  const phoneNumber = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
-                  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-                  window.open(whatsappUrl, '_blank');
-                }}
-                className="flex-1 flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-3 rounded-xl font-medium hover:bg-green-600 transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </button>
-            </div>
-          </div>
-        </div>
+        {/* Removed Contact Taliyo Team section as requested */}
       </div>
 
-      {/* Fixed Bottom Book Button */}
+      {/* Fixed Bottom Actions */}
       <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-4 z-40">
-        <button
-          onClick={handleBookNow}
-          className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
-        >
-          <MessageCircle className="w-5 h-5" />
-          Book Now
-        </button>
+        <div className="max-w-3xl mx-auto px-2 flex gap-3">
+          <button
+            onClick={handleAddToCart}
+            className={`flex-1 px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2 ${isAddedToCart ? 'bg-green-500 text-white' : 'bg-gray-900 text-white'}`}
+          >
+            <ShoppingCart className="w-5 h-5" />
+            {isAddedToCart ? '✓ Added' : 'Add to Cart'}
+          </button>
+          <button
+            onClick={handleBookNow}
+            className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-4 rounded-full font-semibold text-lg hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-2"
+          >
+            <MessageCircle className="w-5 h-5" />
+            Book Now
+          </button>
+        </div>
       </div>
 
       <BottomNavigation />
