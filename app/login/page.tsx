@@ -18,6 +18,7 @@ import {
   MapPin
 } from 'lucide-react';
 import Link from 'next/link';
+import { isDisposableEmail } from '@/lib/disposableDomains';
 
 export default function Login() {
   const router = useRouter();
@@ -100,24 +101,7 @@ export default function Login() {
     }
   };
 
-  const disposableDomains = new Set([
-    'mailinator.com',
-    'temp-mail.org',
-    '10minutemail.com',
-    'guerrillamail.com',
-    'yopmail.com',
-    'throwawaymail.com',
-    'sharklasers.com',
-    'getnada.com',
-    'dispostable.com',
-  ]);
-
-  const isDisposableEmail = (email: string) => {
-    const parts = email.split('@');
-    if (parts.length !== 2) return true;
-    const domain = parts[1].toLowerCase();
-    return disposableDomains.has(domain);
-  };
+  
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
