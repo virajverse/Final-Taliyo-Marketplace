@@ -26,6 +26,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'success' | 'error'>('success');
 
   const [loginForm, setLoginForm] = useState({
     email: '',
@@ -41,8 +42,9 @@ export default function Login() {
     confirmPassword: ''
   });
 
-  const showToastMessage = (message: string) => {
+  const showToastMessage = (message: string, type: 'success' | 'error' = 'success') => {
     setToastMessage(message);
+    setToastType(type);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
@@ -51,7 +53,7 @@ export default function Login() {
   
   const handleResetPassword = async () => {
     if (!loginForm.email) {
-      showToastMessage('Enter your email above first');
+      showToastMessage('Enter your email above first', 'error');
       return;
     }
     try {
@@ -59,9 +61,9 @@ export default function Login() {
       await supabase.auth.resetPasswordForEmail(loginForm.email, {
         redirectTo: origin ? `${origin}/reset-password` : undefined,
       });
-      showToastMessage('Password reset email sent');
+      showToastMessage('Password reset email sent', 'success');
     } catch {
-      showToastMessage('Failed to send reset email');
+      showToastMessage('Failed to send reset email', 'error');
     }
   };
 
@@ -71,26 +73,50 @@ export default function Login() {
     
     // Validate form
     if (!loginForm.email || !loginForm.password) {
-      showToastMessage('Please fill all fields');
+      showToastMessage('Please fill all fields', 'error');
       setLoading(false);
       return;
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
       if (error) throw error;
-      showToastMessage('Login successful!');
+      if (!data || !data.session) {
+        showToastMessage('Login failed. Please check your credentials.', 'error');
+        return;
+      }
+      showToastMessage('Login successful!', 'success');
       setTimeout(() => {
         router.push('/');
       }, 800);
-    } catch (error) {
-      showToastMessage('Login failed. Please try again.');
+    } catch (error: any) {
+      const msg = error?.message || 'Login failed. Please try again.';
+      showToastMessage(msg, 'error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const disposableDomains = new Set([
+    'mailinator.com',
+    'temp-mail.org',
+    '10minutemail.com',
+    'guerrillamail.com',
+    'yopmail.com',
+    'throwawaymail.com',
+    'sharklasers.com',
+    'getnada.com',
+    'dispostable.com',
+  ]);
+
+  const isDisposableEmail = (email: string) => {
+    const parts = email.split('@');
+    if (parts.length !== 2) return true;
+    const domain = parts[1].toLowerCase();
+    return disposableDomains.has(domain);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -99,40 +125,43 @@ export default function Login() {
 
     try {
       if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password) {
-        showToastMessage('Please fill in all required fields');
+        showToastMessage('Please fill in all required fields', 'error');
         setLoading(false);
         return;
       }
       if (signupForm.password !== signupForm.confirmPassword) {
-        showToastMessage('Passwords do not match');
+        showToastMessage('Passwords do not match', 'error');
         setLoading(false);
         return;
       }
-      const { data, error } = await supabase.auth.signUp({
-        email: signupForm.email,
-        password: signupForm.password,
-        options: {
-          data: { name: signupForm.name, phone: signupForm.phone, location: signupForm.location },
-        },
-      });
-      if (error) throw error;
-      const uid = data.user?.id;
-      if (uid) {
-        const avatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-        await supabase.from('profiles').upsert({
-          id: uid,
-          name: signupForm.name,
-          phone: signupForm.phone,
-          avatar_url: avatar,
-          location: signupForm.location || 'Location not set',
-        });
+      if (isDisposableEmail(signupForm.email)) {
+        showToastMessage('Disposable/temporary emails are not allowed. Use a valid email.', 'error');
+        setLoading(false);
+        return;
       }
-      showToastMessage('Account created successfully! Welcome to Taliyo! 🎉');
+      const resp = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: signupForm.name,
+          email: signupForm.email,
+          phone: signupForm.phone,
+          location: signupForm.location,
+          password: signupForm.password,
+        }),
+      });
+      const result = await resp.json();
+      if (!resp.ok) {
+        throw new Error(result?.error || 'Signup failed');
+      }
+      // Server handles profile upsert using service role; no client upsert needed
+      showToastMessage('Account created successfully! Welcome to Taliyo! 🎉', 'success');
       setTimeout(() => {
         router.push('/profile');
       }, 1500);
-    } catch (e) {
-      showToastMessage('Signup failed. Please try again.');
+    } catch (e: any) {
+      const msg = e?.message || 'Signup failed. Please try again.';
+      showToastMessage(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -385,7 +414,7 @@ export default function Login() {
       {/* Toast Notification */}
       {showToast && (
         <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
+          <div className={`${toastType === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce`}>
             <span>{toastMessage}</span>
           </div>
         </div>
