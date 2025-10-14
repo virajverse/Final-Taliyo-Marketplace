@@ -103,6 +103,7 @@ export default function ServiceDetail() {
           service_id: params.id as string,
           click_source: 'web',
           user_agent: typeof window !== 'undefined' ? navigator.userAgent : null,
+          user_id: (user as any)?.id || null,
         },
       ]);
     } catch (e) {

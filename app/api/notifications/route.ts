@@ -3,15 +3,22 @@ import { createClient } from '@supabase/supabase-js'
 export const runtime = 'nodejs'
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
+const anonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export async function GET(req: Request) {
   try {
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl || !anonKey) {
       return new Response(JSON.stringify({ error: 'not_configured' }), { status: 503, headers: { 'content-type': 'application/json' } })
     }
 
-    const supabase = createClient(supabaseUrl as string, serviceKey as string)
+    const auth = req.headers.get('authorization') || req.headers.get('Authorization')
+    if (!auth) {
+      return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'content-type': 'application/json' } })
+    }
+
+    const supabase = createClient(supabaseUrl as string, anonKey as string, {
+      global: { headers: { Authorization: String(auth) } }
+    })
 
     const { searchParams } = new URL(req.url)
     const limit = parseInt(searchParams.get('limit') || '50')

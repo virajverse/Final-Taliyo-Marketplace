@@ -54,34 +54,30 @@ export default function Orders() {
 
   useEffect(() => {
     fetchBookings();
-  }, [userEmail, storedPhone]);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
     const channel = supabase
       .channel('orders_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchBookings())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, () => fetchBookings())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userEmail, storedPhone]);
+  }, [user?.id]);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let q = supabase
+      if (!user?.id) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
+      const { data } = await supabase
         .from('bookings')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
-      const phone = storedPhone?.trim();
-      const email = userEmail?.trim();
-      if (phone) {
-        const digits = phone.replace(/\D/g, '');
-        q = q.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
-      } else if (email) {
-        q = q.or(`email.eq.${email},customer_email.eq.${email}`);
-      }
-
-      const { data } = await q;
       setBookings(data || []);
     } catch (e) {
       console.error('Failed to load bookings', e);

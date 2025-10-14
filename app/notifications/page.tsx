@@ -22,7 +22,16 @@ export default function Notifications() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/notifications?limit=50')
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setNotifications([])
+        return
+      }
+      const res = await fetch('/api/notifications?limit=50', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      })
       if (!res.ok) throw new Error('failed')
       const json = await res.json()
       const rows: Notification[] = (json.notifications || []).map((n: any) => ({

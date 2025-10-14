@@ -26,46 +26,40 @@ export default function Reviews() {
     if (typeof window === 'undefined') return '';
     return localStorage.getItem('userPhone') || '';
   }, []);
-  const userEmail = user?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
 
   useEffect(() => {
     fetchReviews();
-  }, [userEmail, storedPhone]);
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) return;
     const ch = supabase
       .channel('reviews_rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => fetchReviews())
       .subscribe();
     const ch2 = supabase
       .channel('bookings_for_reviews_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchReviews())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `user_id=eq.${user.id}` }, () => fetchReviews())
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
       supabase.removeChannel(ch2);
     };
-  }, [userEmail, storedPhone]);
+  }, [user?.id]);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      // Fetch user's bookings by phone/email (same approach as Orders)
-      let qb = supabase
+      if (!user?.id) {
+        setReviews([]);
+        setLoading(false);
+        return;
+      }
+      const { data: bookingRows } = await supabase
         .from('bookings')
         .select('id')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
-
-      const phone = storedPhone?.trim();
-      const email = userEmail?.trim();
-      if (phone) {
-        const digits = phone.replace(/\D/g, '');
-        qb = qb.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
-      } else if (email) {
-        qb = qb.or(`email.eq.${email},customer_email.eq.${email}`);
-      }
-
-      const { data: bookingRows } = await qb;
       const ids = (bookingRows || []).map(b => b.id);
       if (ids.length === 0) {
         setReviews([]);

@@ -15,8 +15,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Disposable/temporary emails are not allowed.' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string | undefined;
+    const supabaseUrl = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL) as string | undefined;
+    const supabaseAnonKey = (process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) as string | undefined;
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string | undefined;
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });

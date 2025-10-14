@@ -5,6 +5,7 @@ export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const adminWhatsappNumber = '+917042523611'; // व्हाट्सएप नंबर जिस पर बुकिंग की जानकारी भेजी जाएगी
 
 // Check if Supabase is configured
@@ -23,6 +24,15 @@ export async function POST(request: NextRequest) {
         { error: 'Database not configured' },
         { status: 503 }
       );
+    }
+    const auth = request.headers.get('authorization') || request.headers.get('Authorization');
+    let userId: string | null = null;
+    if (auth && supabaseUrl && supabaseAnonKey) {
+      try {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: String(auth) } } });
+        const { data: userData } = await userClient.auth.getUser();
+        userId = userData?.user?.id ?? null;
+      } catch {}
     }
     const formData = await request.formData();
     
@@ -50,13 +60,43 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString()
     };
 
+    // Basic validation
+    const errors: string[] = [];
+    if (!bookingData.service_id) errors.push('serviceId is required');
+    if (!bookingData.full_name) errors.push('fullName is required');
+    if (!bookingData.phone) errors.push('phone is required');
+    if (!bookingData.requirements) errors.push('requirements is required');
+    const phoneDigits = (bookingData.phone || '').replace(/\D/g, '');
+    if (phoneDigits.length < 7 || phoneDigits.length > 15) errors.push('invalid phone');
+    if (bookingData.email) {
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(bookingData.email);
+      if (!emailOk) errors.push('invalid email');
+    }
+    if (errors.length) {
+      return NextResponse.json({ error: 'validation_failed', details: errors }, { status: 400 });
+    }
+
     // Handle file uploads
     const files = [];
     let fileIndex = 0;
-    while (formData.get(`file_${fileIndex}`)) {
+    const maxFiles = 5;
+    while (formData.get(`file_${fileIndex}`) && fileIndex < maxFiles) {
       const file = formData.get(`file_${fileIndex}`) as File;
       if (file && file.size > 0) {
         try {
+          const allowedTypes = new Set(['image/jpeg','image/png','image/webp','image/svg+xml','application/pdf','text/plain']);
+          const maxBytes = 10 * 1024 * 1024;
+          if (!allowedTypes.has(file.type) || file.size > maxBytes) {
+            files.push({
+              name: file.name,
+              path: null,
+              size: file.size,
+              type: file.type,
+              error: 'Invalid file type or size'
+            });
+            fileIndex++;
+            continue;
+          }
           // Upload file to Supabase Storage
           const fileName = `${Date.now()}_${file.name}`;
           const { data: uploadData, error: uploadError } = await supabase.storage
@@ -98,9 +138,10 @@ export async function POST(request: NextRequest) {
     // Insert booking into database
     const { data, error } = await supabase
       .from('bookings')
-      .insert([{
+      .insert([{ 
         ...bookingData,
-        files: files.length > 0 ? JSON.stringify(files) : null
+        files: files.length > 0 ? JSON.stringify(files) : null,
+        user_id: userId
       }])
       .select()
       .single();
@@ -138,19 +179,27 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if Supabase is configured
-    if (!supabase) {
+    // Enforce user-authenticated access and RLS
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 503 }
       );
     }
+    const auth = request.headers.get('authorization') || request.headers.get('Authorization');
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    const userClient = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: String(auth) } } });
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const status = searchParams.get('status');
     
-    let query = supabase
+    let query = userClient
       .from('bookings')
       .select('*')
       .order('created_at', { ascending: false });

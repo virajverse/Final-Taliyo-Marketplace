@@ -67,21 +67,13 @@ export default function Profile() {
     setUser(u);
 
     // Stats
-    const email = authUser.email || '';
-    const storedPhone = (p?.phone || '').replace(/\D/g, '');
-    // Bookings count
+    // Bookings count (user-scoped)
     let bookingsCount = 0;
     try {
-      let qb = supabase
+      const { count: bcount } = await supabase
         .from('bookings')
-        .select('id', { count: 'exact', head: true });
-      if (storedPhone) {
-        qb = qb.or(`customer_phone.ilike.%${storedPhone}%,phone.ilike.%${storedPhone}%`);
-      }
-      if (email) {
-        qb = qb.or(`customer_email.eq.${email},email.eq.${email}`);
-      }
-      const { count: bcount } = await qb;
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', authUser.id);
       bookingsCount = bcount || 0;
     } catch {}
 
@@ -101,6 +93,7 @@ export default function Profile() {
       const { data: bIds } = await supabase
         .from('bookings')
         .select('id')
+        .eq('user_id', authUser.id)
         .order('created_at', { ascending: false })
         .limit(1000);
       const ids = (bIds || []).map(b => b.id);
