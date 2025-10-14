@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { Star, ArrowLeft, Calendar, User } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Review {
   id: string;
@@ -16,18 +18,83 @@ interface Review {
 }
 
 export default function Reviews() {
+  const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const storedPhone = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('userPhone') || '';
+  }, []);
+  const userEmail = user?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
 
   useEffect(() => {
-    // Load user reviews from localStorage or API
-    const savedUser = localStorage.getItem('taliyo_user');
-    if (savedUser) {
-      const userData = JSON.parse(savedUser);
-      // In production, fetch reviews from API
-      // For now, show empty state for new users
+    fetchReviews();
+  }, [userEmail, storedPhone]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel('reviews_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reviews' }, () => fetchReviews())
+      .subscribe();
+    const ch2 = supabase
+      .channel('bookings_for_reviews_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchReviews())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+      supabase.removeChannel(ch2);
+    };
+  }, [userEmail, storedPhone]);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      // Fetch user's bookings by phone/email (same approach as Orders)
+      let qb = supabase
+        .from('bookings')
+        .select('id')
+        .order('created_at', { ascending: false });
+
+      const phone = storedPhone?.trim();
+      const email = userEmail?.trim();
+      if (phone) {
+        const digits = phone.replace(/\D/g, '');
+        qb = qb.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
+      } else if (email) {
+        qb = qb.or(`email.eq.${email},customer_email.eq.${email}`);
+      }
+
+      const { data: bookingRows } = await qb;
+      const ids = (bookingRows || []).map(b => b.id);
+      if (ids.length === 0) {
+        setReviews([]);
+        setLoading(false);
+        return;
+      }
+
+      const { data: r } = await supabase
+        .from('reviews')
+        .select(`id, rating, review_text, created_at, service:services(title,provider_name)`) 
+        .in('booking_id', ids)
+        .eq('is_approved', true)
+        .order('created_at', { ascending: false });
+
+      const mapped: Review[] = (r || []).map((row: any) => ({
+        id: row.id,
+        serviceName: row.service?.title || 'Service',
+        serviceProvider: row.service?.provider_name || 'Provider',
+        rating: Number(row.rating || 0),
+        comment: row.review_text || '',
+        date: row.created_at,
+      }));
+      setReviews(mapped);
+    } catch (e) {
       setReviews([]);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (

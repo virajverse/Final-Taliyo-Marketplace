@@ -2,11 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 interface User {
   id: string;
-  name: string;
-  email: string;
+  name?: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
 }
 
 interface AuthContextType {
@@ -30,44 +33,71 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isAuthenticated = isLoggedIn;
 
   useEffect(() => {
-    // लॉगिन स्टेट को लोकल स्टोरेज से चेक करें
-    const checkLoginStatus = () => {
-      if (typeof window !== 'undefined') {
-        const userLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-        setIsLoggedIn(userLoggedIn);
-        
-        // Also restore user data if available
-        const userData = localStorage.getItem('userData');
-        if (userData) {
-          try {
-            setUser(JSON.parse(userData));
-          } catch (e) {
-            console.error('Failed to parse user data');
-          }
+    let mounted = true;
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+      if (session?.user) {
+        const suser = session.user;
+        // Try loading profile row (optional)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('id,name,phone,avatar_url')
+          .eq('id', suser.id)
+          .maybeSingle();
+        const u: User = {
+          id: suser.id,
+          name: profile?.name || (suser.user_metadata as any)?.name,
+          email: suser.email || undefined,
+          phone: profile?.phone,
+          avatar_url: profile?.avatar_url,
+        };
+        setUser(u);
+        setIsLoggedIn(true);
+        // legacy compat for pages filtering by email/phone
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('userData', JSON.stringify({ email: u.email }));
+          if (u.phone) localStorage.setItem('userPhone', u.phone);
         }
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
       }
     };
+    init();
 
-    checkLoginStatus();
-    window.addEventListener('storage', checkLoginStatus);
-    
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const suser = session.user;
+        setUser({
+          id: suser.id,
+          name: (suser.user_metadata as any)?.name,
+          email: suser.email || undefined,
+        });
+        setIsLoggedIn(true);
+        if (typeof window !== 'undefined' && suser.email) {
+          localStorage.setItem('userData', JSON.stringify({ email: suser.email }));
+        }
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    });
     return () => {
-      window.removeEventListener('storage', checkLoginStatus);
+      mounted = false;
+      sub.subscription.unsubscribe();
     };
   }, []);
 
-  const login = (userData: User): void => {
-    // Save login state and user data
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userData', JSON.stringify(userData));
-    setIsLoggedIn(true);
-    setUser(userData);
+  const login = (_userData: User): void => {
+    // Deprecated: use supabase.auth in pages.
+    router.push('/login');
   };
 
-  const logout = () => {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userEmail');
+  const logout = async () => {
+    await supabase.auth.signOut();
     setIsLoggedIn(false);
+    setUser(null);
     router.push('/');
   };
 

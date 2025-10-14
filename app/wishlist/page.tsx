@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import { Heart, ShoppingCart, Share2 } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface WishlistItem {
   id: string;
@@ -32,62 +34,58 @@ interface WishlistItem {
 }
 
 export default function Wishlist() {
-  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([
-    {
-      id: '1',
-      title: 'Professional Web Development',
-      description: 'Full-stack web development services with modern technologies.',
-      category_id: '1',
-      price_min: 5000,
-      price_max: 15000,
-      price_type: 'fixed',
-      location: 'Delhi NCR',
-      is_remote: true,
-      images: [
-        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop'
-      ],
-      rating_average: 4.8,
-      rating_count: 124,
-      provider_name: 'Tech Solutions',
-      provider_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-      provider_verified: true,
-      duration_minutes: 2880,
-      is_active: true,
-      is_featured: true,
-      slug: 'professional-web-development',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      dateAdded: '2024-01-15'
-    },
-    {
-      id: '3',
-      title: 'Digital Marketing Services',
-      description: 'Complete digital marketing solutions including SEO, social media, and PPC campaigns.',
-      category_id: '3',
-      price_min: 3000,
-      price_max: 10000,
-      price_type: 'hourly',
-      location: 'Bangalore',
-      is_remote: true,
-      images: [
-        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop'
-      ],
-      rating_average: 4.7,
-      rating_count: 156,
-      provider_name: 'Digital Growth',
-      provider_avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop',
-      provider_verified: true,
-      duration_minutes: 60,
-      is_active: true,
-      is_featured: true,
-      slug: 'digital-marketing-services',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      dateAdded: '2024-01-10'
-    }
-  ]);
+  const { user } = useAuth();
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const handleToggleWishlist = (serviceId: string) => {
+  const fetchWishlist = async () => {
+    if (!user?.id) {
+      setWishlistItems([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const { data } = await supabase
+        .from('wishlists')
+        .select('created_at, service:services(*)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      const items: WishlistItem[] = (data || [])
+        .filter((row: any) => row.service)
+        .map((row: any) => ({
+          ...(row.service as any),
+          images: Array.isArray(row.service.images) ? row.service.images : (row.service.images ? JSON.parse(row.service.images) : []),
+          dateAdded: row.created_at,
+        }));
+      setWishlistItems(items);
+    } catch (e) {
+      setWishlistItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel('wishlists_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => fetchWishlist())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  const handleToggleWishlist = async (serviceId: string) => {
+    if (!user?.id) return;
+    await supabase
+      .from('wishlists')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('service_id', serviceId);
     setWishlistItems(items => items.filter(item => item.id !== serviceId));
   };
 
@@ -113,7 +111,7 @@ export default function Wishlist() {
     }
   };
 
-  if (wishlistItems.length === 0) {
+  if (!loading && wishlistItems.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />

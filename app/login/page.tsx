@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
+
 import { 
   ArrowLeft, 
   Mail, 
@@ -47,6 +49,22 @@ export default function Login() {
 
   const { login } = useAuth();
   
+  const handleResetPassword = async () => {
+    if (!loginForm.email) {
+      showToastMessage('Enter your email above first');
+      return;
+    }
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      await supabase.auth.resetPasswordForEmail(loginForm.email, {
+        redirectTo: origin ? `${origin}/reset-password` : undefined,
+      });
+      showToastMessage('Password reset email sent');
+    } catch {
+      showToastMessage('Failed to send reset email');
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -59,23 +77,15 @@ export default function Login() {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Call login function from AuthContext
-      login({
-        id: '1',
-        name: 'Test User',
-        email: loginForm.email
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginForm.email,
+        password: loginForm.password,
       });
-      
-      // Success message
+      if (error) throw error;
       showToastMessage('Login successful!');
-      
-      // Redirect to home page after successful login
       setTimeout(() => {
         router.push('/');
-      }, 1000);
+      }, 800);
     } catch (error) {
       showToastMessage('Login failed. Please try again.');
     } finally {
@@ -87,40 +97,45 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      if (signupForm.name && signupForm.email && signupForm.phone && signupForm.password) {
-        if (signupForm.password !== signupForm.confirmPassword) {
-          showToastMessage('Passwords do not match');
-          setLoading(false);
-          return;
-        }
-
-        const userData = {
-          name: signupForm.name,
-          email: signupForm.email,
-          phone: signupForm.phone,
-          location: signupForm.location || 'Location not set',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          joinDate: new Date().toISOString(),
-          stats: {
-            bookings: 0,
-            favorites: 0,
-            reviews: 0
-          }
-        };
-        
-        localStorage.setItem('taliyo_user', JSON.stringify(userData));
-        showToastMessage('Account created successfully! Welcome to Taliyo! 🎉');
-        
-        setTimeout(() => {
-          router.push('/profile');
-        }, 1500);
-      } else {
+    try {
+      if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password) {
         showToastMessage('Please fill in all required fields');
+        setLoading(false);
+        return;
       }
+      if (signupForm.password !== signupForm.confirmPassword) {
+        showToastMessage('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase.auth.signUp({
+        email: signupForm.email,
+        password: signupForm.password,
+        options: {
+          data: { name: signupForm.name, phone: signupForm.phone, location: signupForm.location },
+        },
+      });
+      if (error) throw error;
+      const uid = data.user?.id;
+      if (uid) {
+        const avatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+        await supabase.from('profiles').upsert({
+          id: uid,
+          name: signupForm.name,
+          phone: signupForm.phone,
+          avatar_url: avatar,
+          location: signupForm.location || 'Location not set',
+        });
+      }
+      showToastMessage('Account created successfully! Welcome to Taliyo! 🎉');
+      setTimeout(() => {
+        router.push('/profile');
+      }, 1500);
+    } catch (e) {
+      showToastMessage('Signup failed. Please try again.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -226,9 +241,9 @@ export default function Login() {
               </button>
 
               <div className="mt-4 text-center">
-                <Link href="#" className="text-blue-500 text-sm hover:text-blue-600">
+                <button type="button" onClick={handleResetPassword} className="text-blue-500 text-sm hover:text-blue-600">
                   Forgot your password?
-                </Link>
+                </button>
               </div>
             </div>
           </form>
