@@ -9,6 +9,7 @@ import { TrendingUp, Star, Shield, Users, MessageCircle } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
 import { SearchIcon } from '@/components/CustomIcons';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
   id: string;
@@ -59,21 +60,37 @@ export default function Home() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('home_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const fetchData = async () => {
     try {
-      // Import API client dynamically to avoid SSR issues
-      const { apiService } = await import('@/lib/api');
-      
-      const [services, categories] = await Promise.all([
-        apiService.getServices({ featured: true, limit: 6 }),
-        apiService.getCategories()
+      const [{ data: services }, { data: categories }] = await Promise.all([
+        supabase
+          .from('services')
+          .select('*')
+          .eq('is_active', true)
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(6),
+        supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .limit(8)
       ]);
 
-      setFeaturedServices(services);
-      setPopularCategories(categories.slice(0, 8));
+      setFeaturedServices(services || []);
+      setPopularCategories((categories || []).slice(0, 8));
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      // Fallback to mock data if API fails
       setFeaturedServices([]);
       setPopularCategories([]);
     } finally {

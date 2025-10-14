@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+
 import { 
   Clock, 
   CheckCircle, 
@@ -17,6 +18,8 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Order {
   id: string;
@@ -37,54 +40,56 @@ interface Order {
 }
 
 export default function Orders() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'completed'>('all');
-  const [orders] = useState<Order[]>([
-    {
-      id: 'ORD001',
-      serviceTitle: 'Professional Web Development',
-      providerName: 'Tech Solutions',
-      providerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-      amount: 12000,
-      status: 'completed',
-      bookingDate: '2024-01-15',
-      scheduledDate: '2024-01-20',
-      completedDate: '2024-01-25',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-      description: 'E-commerce website with payment integration',
-      location: 'Remote',
-      phone: '+91 98765 43210',
-      rating: 5,
-      review: 'Excellent work! Very professional and delivered on time.'
-    },
-    {
-      id: 'ORD002',
-      serviceTitle: 'Digital Marketing Campaign',
-      providerName: 'Digital Growth',
-      providerAvatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop',
-      amount: 8000,
-      status: 'in-progress',
-      bookingDate: '2024-01-18',
-      scheduledDate: '2024-01-22',
-      image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-      description: 'Social media marketing for 3 months',
-      location: 'Bangalore',
-      phone: '+91 87654 32109'
-    },
-    {
-      id: 'ORD003',
-      serviceTitle: 'Home Cleaning Service',
-      providerName: 'CleanPro Services',
-      providerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      amount: 800,
-      status: 'pending',
-      bookingDate: '2024-01-20',
-      scheduledDate: '2024-01-25',
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-      description: 'Deep cleaning for 3BHK apartment',
-      location: 'Delhi NCR',
-      phone: '+91 76543 21098'
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const storedPhone = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    return localStorage.getItem('userPhone') || '';
+  }, []);
+
+  const userEmail = user?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
+
+  useEffect(() => {
+    fetchBookings();
+  }, [userEmail, storedPhone]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('orders_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchBookings())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [userEmail, storedPhone]);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      let q = supabase
+        .from('bookings')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const phone = storedPhone?.trim();
+      const email = userEmail?.trim();
+      if (phone) {
+        const digits = phone.replace(/\D/g, '');
+        q = q.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
+      } else if (email) {
+        q = q.or(`email.eq.${email},customer_email.eq.${email}`);
+      }
+
+      const { data } = await q;
+      setBookings(data || []);
+    } catch (e) {
+      console.error('Failed to load bookings', e);
+      setBookings([]);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getStatusIcon = (status: Order['status']) => {
     switch (status) {
@@ -120,6 +125,24 @@ export default function Orders() {
     }
   };
 
+  const orders: Order[] = useMemo(() => {
+    return (bookings || []).map((b: any) => ({
+      id: b.id,
+      serviceTitle: b.service_title || 'Service',
+      providerName: b.provider_name || 'Provider',
+      providerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+      amount: Number(b.final_price || 0),
+      status: (b.status || 'pending') as Order['status'],
+      bookingDate: b.created_at,
+      scheduledDate: b.preferred_date || undefined,
+      completedDate: b.status === 'completed' ? b.updated_at : undefined,
+      image: (Array.isArray(b.images) ? b.images[0] : (b.images ? JSON.parse(b.images || '[]')[0] : '')) || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
+      description: b.message || b.requirements || '',
+      location: b.location || (b.delivery_preference ? `Timeline: ${b.delivery_preference}` : 'Remote'),
+      phone: b.phone || b.customer_phone || ''
+    }));
+  }, [bookings]);
+
   const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
     if (activeTab === 'pending') return ['pending', 'confirmed', 'in-progress'].includes(order.status);
@@ -133,7 +156,7 @@ export default function Orders() {
     window.open(whatsappUrl, '_blank');
   };
 
-  if (orders.length === 0) {
+  if (!loading && orders.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />

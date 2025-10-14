@@ -7,6 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import { ArrowLeft, Package } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
   id: string;
@@ -54,21 +55,32 @@ export default function CategoryDetail() {
     fetchCategoryData();
   }, [params.id]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('category_detail')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `id=eq.${params.id}` }, () => fetchCategoryData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchCategoryData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id]);
+
   const fetchCategoryData = async () => {
     try {
-      const { apiService } = require('@/lib/api');
-      
-      // Fetch category details and services
-      const [categoryData, servicesData] = await Promise.all([
-        apiService.getCategory(params.id as string),
-        apiService.getServices({ category_id: params.id as string })
+      const [{ data: cat, error: catErr }, { data: svc, error: svcErr }] = await Promise.all([
+        supabase.from('categories').select('*').eq('id', params.id as string).single(),
+        supabase
+          .from('services')
+          .select('*')
+          .eq('category_id', params.id as string)
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
       ]);
-      
-      setCategory(categoryData);
-      setServices(servicesData);
+      if (catErr) throw catErr;
+      if (svcErr) throw svcErr;
+      setCategory(cat || null);
+      setServices(svc || []);
     } catch (error) {
       console.error('Failed to fetch category data:', error);
-      // Fallback for category not found
       setCategory(null);
       setServices([]);
     } finally {

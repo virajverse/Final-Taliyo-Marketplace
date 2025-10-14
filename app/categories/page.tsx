@@ -6,6 +6,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { ArrowRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import IconMapper from '@/components/IconMapper';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Category {
   id: string;
@@ -27,12 +28,22 @@ export default function Categories() {
     fetchCategories();
   }, []);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('categories_page')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchCategories())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   const fetchCategories = async () => {
     try {
-      // Import API client dynamically
-      const { apiService } = await import('@/lib/api');
-      const data = await apiService.getCategories();
-      setCategories(data);
+      const { data } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      setCategories(data || []);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
       setCategories([]);

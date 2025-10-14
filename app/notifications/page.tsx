@@ -1,44 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import { supabase } from '@/lib/supabaseClient';
 import { Bell, ArrowLeft, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import Link from 'next/link';
 
 interface Notification {
   id: string;
-  type: 'booking' | 'reminder' | 'promotion' | 'system';
+  type: 'booking' | 'reminder' | 'promotion' | 'system' | string;
   title: string;
   message: string;
-  time: string;
-  read: boolean;
+  is_read?: boolean;
+  created_at?: string;
 }
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
-    // Load notifications from localStorage or API
-    const savedUser = localStorage.getItem('taliyo_user');
-    if (savedUser) {
-      // In production, fetch notifications from API
-      // For now, show empty state for new users
-      setNotifications([]);
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications?limit=50')
+      if (!res.ok) throw new Error('failed')
+      const json = await res.json()
+      const rows: Notification[] = (json.notifications || []).map((n: any) => ({
+        id: n.id,
+        type: n.type || 'system',
+        title: n.title || 'Notification',
+        message: n.message || '',
+        is_read: n.is_read,
+        created_at: n.created_at
+      }))
+      setNotifications(rows)
+    } catch {
+      setNotifications([])
     }
-  }, []);
+  }
+
+  // Initial load + polling fallback
+  useEffect(() => {
+    fetchNotifications()
+    const id = setInterval(fetchNotifications, 60000)
+    return () => clearInterval(id)
+  }, [])
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('notifications_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        fetchNotifications()
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   const markAsRead = (id: string) => {
-    setNotifications(prev =>
-      prev.map(notification =>
-        notification.id === id ? { ...notification, read: true } : notification
+    setNotifications((prev: Notification[]) =>
+      prev.map((notification: Notification) =>
+        notification.id === id ? { ...notification, is_read: true } : notification
       )
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev =>
-      prev.map(notification => ({ ...notification, read: true }))
+    setNotifications((prev: Notification[]) =>
+      prev.map((notification: Notification) => ({ ...notification, is_read: true }))
     );
   };
 
@@ -57,7 +86,7 @@ export default function Notifications() {
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n: Notification) => !n.is_read).length;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -94,12 +123,12 @@ export default function Notifications() {
         {/* Notifications List */}
         {notifications.length > 0 ? (
           <div className="space-y-3">
-            {notifications.map((notification) => (
+            {notifications.map((notification: Notification) => (
               <div
                 key={notification.id}
                 onClick={() => markAsRead(notification.id)}
                 className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-                  notification.read ? 'border-gray-200' : 'border-blue-200 bg-blue-50'
+                  notification.is_read ? 'border-gray-200' : 'border-blue-200 bg-blue-50'
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -110,22 +139,22 @@ export default function Notifications() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className={`font-medium ${
-                        notification.read ? 'text-gray-900' : 'text-gray-900 font-semibold'
+                        notification.is_read ? 'text-gray-900' : 'text-gray-900 font-semibold'
                       }`}>
                         {notification.title}
                       </h3>
                       <span className="text-xs text-gray-500 flex-shrink-0">
-                        {notification.time}
+                        {notification.created_at ? new Date(notification.created_at).toLocaleString() : ''}
                       </span>
                     </div>
                     
                     <p className={`text-sm mt-1 ${
-                      notification.read ? 'text-gray-600' : 'text-gray-700'
+                      notification.is_read ? 'text-gray-600' : 'text-gray-700'
                     }`}>
                       {notification.message}
                     </p>
                     
-                    {!notification.read && (
+                    {!notification.is_read && (
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                     )}
                   </div>

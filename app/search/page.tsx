@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
   id: string;
@@ -34,7 +35,7 @@ interface Service {
 function SearchResultsContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
-  
+
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(query);
@@ -50,12 +51,28 @@ function SearchResultsContent() {
     searchServices(query);
   }, [query]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('search_realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => searchServices(searchQuery || query))
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [searchQuery, query]);
+
   const searchServices = async (searchTerm: string) => {
     setLoading(true);
     try {
-      const { apiService } = require('@/lib/api');
-      const results = await apiService.searchServices(searchTerm);
-      setServices(results);
+      let queryRef = supabase
+        .from('services')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      if (searchTerm) {
+        // Basic ILIKE search on title/description
+        queryRef = queryRef.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`);
+      }
+      const { data } = await queryRef;
+      setServices(data || []);
     } catch (error) {
       console.error('Search failed:', error);
       setServices([]);

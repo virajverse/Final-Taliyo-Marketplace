@@ -7,6 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { Star, MapPin, Clock, ArrowLeft, MessageCircle, ShoppingCart } from 'lucide-react';
 import BookingModal from '@/components/BookingModal';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
   id: string;
@@ -47,48 +48,29 @@ export default function ServiceDetail() {
     fetchService();
   }, [params.id]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('service_detail')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services', filter: `id=eq.${params.id}` }, () => fetchService())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [params.id]);
+
   const fetchService = async () => {
     try {
-      // Import API client dynamically
-      const { apiService } = await import('@/lib/api');
-      const serviceData = await apiService.getService(params.id as string);
-      setService(serviceData);
-      
-      // Track service view
-      await apiService.trackEvent({
-        service_id: params.id as string,
-        event_type: 'view'
-      });
+      const { data, error } = await supabase
+        .from('services')
+        .select('*')
+        .eq('id', params.id as string)
+        .single();
+      if (error) throw error;
+      setService(data as unknown as Service);
+
+      // Track service view in analytics (public insert allowed)
+      await supabase.from('analytics').insert([{ service_id: params.id as string, event_type: 'view' }]);
     } catch (error) {
       console.error('Failed to fetch service:', error);
-      // Fallback to mock data if API fails
-      const mockService: Service = {
-        id: params.id as string,
-        title: 'Professional Web Development',
-        description: 'Full-stack web development services with modern technologies. We build responsive, fast, and SEO-friendly websites tailored to your business needs.',
-        price_min: 5000,
-        price_max: 15000,
-        price_type: 'fixed',
-        location: 'Delhi NCR',
-        is_remote: true,
-        images: [
-          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-          'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop',
-        ],
-        rating_average: 4.8,
-        rating_count: 124,
-        provider_name: 'Tech Solutions',
-        provider_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-        provider_bio: 'Professional web development team with 5+ years of experience',
-        provider_phone: '+917042523611',
-        provider_verified: true,
-        duration_minutes: 2880,
-        is_active: true,
-        is_featured: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      setService(mockService);
+      setService(null);
     } finally {
       setLoading(false);
     }
@@ -110,10 +92,22 @@ export default function ServiceDetail() {
 
   const { user, isAuthenticated, showLoginModal } = useAuth();
 
-  const handleBookNow = () => {
+  const handleBookNow = async () => {
     if (!isAuthenticated) {
       showLoginModal();
       return;
+    }
+    try {
+      await supabase.from('order_clicks').insert([
+        {
+          service_id: params.id as string,
+          click_source: 'web',
+          user_agent: typeof window !== 'undefined' ? navigator.userAgent : null,
+        },
+      ]);
+    } catch (e) {
+      // non-blocking
+      console.error('order_clicks insert failed', e);
     }
     setIsBookingModalOpen(true);
   };
