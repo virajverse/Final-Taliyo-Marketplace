@@ -9,31 +9,32 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC
 const adminWhatsappNumber = '+917042523611'; // व्हाट्सएप नंबर जिस पर बुकिंग की जानकारी भेजी जाएगी
 
 // Check if Supabase is configured
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('Supabase not configured. Bookings API will not work. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.');
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Supabase not configured. Bookings API requires SUPABASE_URL and SUPABASE_ANON_KEY.');
 }
-const supabase = supabaseUrl && supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
 
 export async function POST(request: NextRequest) {
   try {
     // Check if Supabase is configured
-    if (!supabase) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
         { error: 'Database not configured' },
         { status: 503 }
       );
     }
     const auth = request.headers.get('authorization') || request.headers.get('Authorization');
-    let userId: string | null = null;
-    if (auth && supabaseUrl && supabaseAnonKey) {
-      try {
-        const userClient = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: String(auth) } } });
-        const { data: userData } = await userClient.auth.getUser();
-        userId = userData?.user?.id ?? null;
-      } catch {}
+    if (!auth) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
+    const db = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: String(auth) } } });
+    let userId: string | null = null;
+    try {
+      const { data: userData } = await db.auth.getUser();
+      userId = userData?.user?.id ?? null;
+    } catch {}
     const formData = await request.formData();
     
     // Extract form fields
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
           }
           // Upload file to Supabase Storage
           const fileName = `${Date.now()}_${file.name}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
+          const { data: uploadData, error: uploadError } = await db.storage
             .from('booking-files')
             .upload(fileName, file);
 
@@ -136,7 +137,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert booking into database
-    const { data, error } = await supabase
+    let data, error;
+    ({ data, error } = await db
       .from('bookings')
       .insert([{ 
         ...bookingData,
@@ -144,12 +146,33 @@ export async function POST(request: NextRequest) {
         user_id: userId
       }])
       .select()
-      .single();
+      .single());
+
+    // Fallback: insert minimal shape if schema mismatch
+    if (error) {
+      console.error('Database error (full insert):', error);
+      const minimal = {
+        service_id: bookingData.service_id,
+        service_title: bookingData.service_title,
+        full_name: bookingData.full_name,
+        phone: bookingData.phone,
+        email: bookingData.email,
+        requirements: bookingData.requirements,
+        status: bookingData.status,
+        created_at: bookingData.created_at,
+        user_id: userId
+      } as any;
+      ({ data, error } = await db
+        .from('bookings')
+        .insert([minimal])
+        .select()
+        .single());
+    }
 
     if (error) {
-      console.error('Database error:', error);
+      console.error('Database error (after fallback):', error);
       return NextResponse.json(
-        { error: 'Failed to create booking' },
+        { error: 'Failed to create booking', details: (error as any)?.message || (error as any)?.hint || error },
         { status: 500 }
       );
     }
