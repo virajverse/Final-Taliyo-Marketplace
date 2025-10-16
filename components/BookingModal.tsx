@@ -269,151 +269,152 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-6 max-h-[80vh] overflow-y-auto no-scrollbar">
-          {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
-          )}
-          {serverSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
-          )}
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[80vh]">
+          <div className="px-6 py-5 space-y-6 overflow-y-auto no-scrollbar flex-1">
+            {serverError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
+            )}
+            {serverSuccess && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
+            )}
 
-          {!isCustom && cartPreview.length > 0 && (
-            <div>
-              <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
-              <div className="space-y-2">
-                {cartPreview.map((it, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-sm">
-                    <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
-                    <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+            {!isCustom && cartPreview.length > 0 && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+                <div className="space-y-2">
+                  {cartPreview.map((it, idx) => (
+                    <div key={idx} className="flex items-center justify-between text-sm">
+                      <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
+                      <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+                    </div>
+                  ))}
+                  <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
+                    <span>Total</span>
+                    <span>₹{cartSubtotal.toLocaleString()}</span>
                   </div>
-                ))}
-                <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
-                  <span>Total</span>
-                  <span>₹{cartSubtotal.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">Your Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+                  <input
+                    type="text"
+                    value={form.fullName}
+                    onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.fullName ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Enter your full name"
+                    required
+                  />
+                  {validation.fullName && <p className="text-xs text-red-600 mt-1">{validation.fullName}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.phone ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="+91 9876543210"
+                    required
+                  />
+                  {validation.phone && <p className="text-xs text-red-600 mt-1">{validation.phone}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.email ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="your@email.com"
+                    required
+                  />
+                  {validation.email && <p className="text-xs text-red-600 mt-1">{validation.email}</p>}
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number *</label>
+                    <label className="flex items-center gap-2 text-xs text-gray-600">
+                      <input type="checkbox" checked={sameWhatsApp} onChange={(e) => {
+                        setSameWhatsApp(e.target.checked);
+                        if (e.target.checked) setForm(prev => ({ ...prev, whatsappNumber: prev.phone }));
+                      }} />
+                      Same as phone
+                    </label>
+                  </div>
+                  <input
+                    type="tel"
+                    value={form.whatsappNumber}
+                    onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.whatsappNumber ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="WhatsApp number"
+                    required
+                    disabled={sameWhatsApp}
+                  />
+                  {validation.whatsappNumber && <p className="text-xs text-red-600 mt-1">{validation.whatsappNumber}</p>}
                 </div>
               </div>
             </div>
-          )}
 
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Your Information</h3>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">Project Requirements</h3>
+              <label className="block text-sm font-medium text-gray-700 mb-1">What do you need? Please describe in detail</label>
+              <textarea
+                value={form.requirements}
+                onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.requirements ? 'border-red-500' : 'border-gray-300'}`}
+                rows={5}
+                placeholder="e.g., I need an e-commerce website with payment gateway..."
+              />
+              {validation.requirements && <p className="text-xs text-red-600 mt-1">{validation.requirements}</p>}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
-                <input
-                  type="text"
-                  value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.fullName ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Enter your full name"
-                  required
-                />
-                {validation.fullName && <p className="text-xs text-red-600 mt-1">{validation.fullName}</p>}
+                <h4 className="font-medium text-gray-900 mb-2">Budget Range</h4>
+                <select
+                  value={form.budgetRange}
+                  onChange={(e) => setForm({ ...form, budgetRange: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
+                >
+                  <option value="">Select Budget</option>
+                  <option value="under_10k">Under ₹10,000</option>
+                  <option value="10k_25k">₹10,000 - ₹25,000</option>
+                  <option value="25k_50k">₹25,000 - ₹50,000</option>
+                  <option value="50k_1l">₹50,000 - ₹1,00,000</option>
+                  <option value="above_1l">Above ₹1,00,000</option>
+                </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
-                <input
-                  type="tel"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.phone ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="+91 9876543210"
-                  required
-                />
-                {validation.phone && <p className="text-xs text-red-600 mt-1">{validation.phone}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.email ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="your@email.com"
-                  required
-                />
-                {validation.email && <p className="text-xs text-red-600 mt-1">{validation.email}</p>}
-              </div>
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number *</label>
-                  <label className="flex items-center gap-2 text-xs text-gray-600">
-                    <input type="checkbox" checked={sameWhatsApp} onChange={(e) => {
-                      setSameWhatsApp(e.target.checked);
-                      if (e.target.checked) setForm(prev => ({ ...prev, whatsappNumber: prev.phone }));
-                    }} />
-                    Same as phone
-                  </label>
-                </div>
-                <input
-                  type="tel"
-                  value={form.whatsappNumber}
-                  onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.whatsappNumber ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="WhatsApp number"
-                  required
-                  disabled={sameWhatsApp}
-                />
-                {validation.whatsappNumber && <p className="text-xs text-red-600 mt-1">{validation.whatsappNumber}</p>}
+                <h4 className="font-medium text-gray-900 mb-2">Delivery Preference</h4>
+                <select
+                  value={form.deliveryPreference}
+                  onChange={(e) => setForm({ ...form, deliveryPreference: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
+                >
+                  <option value="">Select Timeline</option>
+                  <option value="1_2_weeks">1 - 2 weeks</option>
+                  <option value="2_4_weeks">2 - 4 weeks</option>
+                  <option value="1_2_months">1 - 2 months</option>
+                  <option value="flexible">Flexible</option>
+                </select>
               </div>
             </div>
-          </div>
 
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Project Requirements</h3>
-            <label className="block text-sm font-medium text-gray-700 mb-1">What do you need? Please describe in detail</label>
-            <textarea
-              value={form.requirements}
-              onChange={(e) => setForm({ ...form, requirements: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.requirements ? 'border-red-500' : 'border-gray-300'}`}
-              rows={5}
-              placeholder="e.g., I need an e-commerce website with payment gateway..."
-            />
-            {validation.requirements && <p className="text-xs text-red-600 mt-1">{validation.requirements}</p>}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-gray-900 mb-2">Budget Range</h4>
-              <select
-                value={form.budgetRange}
-                onChange={(e) => setForm({ ...form, budgetRange: e.target.value })}
+              <h3 className="font-semibold text-gray-900 mb-2">Additional Notes (Optional)</h3>
+              <textarea
+                value={form.additionalNotes}
+                onChange={(e) => setForm({ ...form, additionalNotes: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
-              >
-                <option value="">Select Budget</option>
-                <option value="under_10k">Under ₹10,000</option>
-                <option value="10k_25k">₹10,000 - ₹25,000</option>
-                <option value="25k_50k">₹25,000 - ₹50,000</option>
-                <option value="50k_1l">₹50,000 - ₹1,00,000</option>
-                <option value="above_1l">Above ₹1,00,000</option>
-              </select>
+                rows={3}
+                placeholder="Any special requirements or questions..."
+              />
             </div>
-            <div>
-              <h4 className="font-medium text-gray-900 mb-2">Delivery Preference</h4>
-              <select
-                value={form.deliveryPreference}
-                onChange={(e) => setForm({ ...form, deliveryPreference: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
-              >
-                <option value="">Select Timeline</option>
-                <option value="1_2_weeks">1 - 2 weeks</option>
-                <option value="2_4_weeks">2 - 4 weeks</option>
-                <option value="1_2_months">1 - 2 months</option>
-                <option value="flexible">Flexible</option>
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-2">Additional Notes (Optional)</h3>
-            <textarea
-              value={form.additionalNotes}
-              onChange={(e) => setForm({ ...form, additionalNotes: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
-              rows={3}
-              placeholder="Any special requirements or questions..."
-            />
-          </div>
 
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Upload Files (Optional)</h3>
@@ -440,12 +441,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
                 </div>
               )}
             </div>
+          </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
-              {submitting ? 'Submitting...' : 'Submit Order'}
-            </button>
+          <div className="px-6 py-4 border-t border-gray-200 bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
+              <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
+                {submitting ? 'Submitting...' : 'Submit Order'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

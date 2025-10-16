@@ -175,6 +175,16 @@ export default function Orders() {
             >
               Book a Service
             </button>
+            <div className="mt-4 flex flex-col items-center gap-2">
+              <span className="text-xs text-gray-500">Ya customised requirement hai?</span>
+              <button
+                onClick={() => setIsBookingOpen(true)}
+                className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Custom Order
+              </button>
+            </div>
           </div>
         </div>
         <BottomNavigation />
