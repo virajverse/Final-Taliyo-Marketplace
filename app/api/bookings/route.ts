@@ -27,8 +27,12 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     
     // Extract form fields
+    // Accept non-UUID serviceId by coercing to null (e.g., cart orders)
+    const rawServiceId = (formData.get('serviceId') as string) || '';
+    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const service_id = uuidRegex.test(rawServiceId) ? rawServiceId : null;
     const bookingData = {
-      service_id: formData.get('serviceId') as string,
+      service_id,
       service_title: formData.get('serviceTitle') as string,
       service_price: formData.get('servicePrice') as string,
       provider_name: formData.get('providerName') as string,
@@ -100,7 +104,8 @@ export async function POST(request: NextRequest) {
       .from('bookings')
       .insert([{
         ...bookingData,
-        files: files.length > 0 ? JSON.stringify(files) : null
+        // Store files as JSON (JSONB column), not string
+        files: files.length > 0 ? files : null
       }])
       .select()
       .single();

@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useRouter } from 'next/navigation';
 
 interface OrderProceedModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface OrderProceedModalProps {
 
 export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModalProps) {
   const { isLoggedIn, user } = useAuth();
+  const router = useRouter();
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -102,7 +104,13 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to submit order');
       setServerSuccess('Order submitted successfully!');
-      setTimeout(() => onClose(), 1200);
+      const bookingId = data?.booking?.id || data?.id;
+      if (bookingId) {
+        try { localStorage.removeItem('cart'); } catch {}
+        router.push(`/order-status/${bookingId}`);
+      } else {
+        setTimeout(() => onClose(), 1000);
+      }
     } catch (err: any) {
       setServerError(err?.message || 'Something went wrong');
     } finally {

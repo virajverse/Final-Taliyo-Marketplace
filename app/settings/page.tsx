@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
+import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
+
 import { 
   ArrowLeft, 
   User, 
@@ -46,6 +49,7 @@ interface SettingItem {
 }
 
 export default function Settings() {
+  const { isLoggedIn, user: authUser } = useAuth();
   const [settings, setSettings] = useState<UserSettings>({
     notifications: {
       push: true,
@@ -65,14 +69,36 @@ export default function Settings() {
 
   const [user, setUser] = useState<any>(null);
 
+  // Load initial user and settings from Supabase auth metadata
   useEffect(() => {
-    const savedUser = localStorage.getItem('taliyo_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    setUser(authUser);
+  }, [authUser]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const meta = (data.user?.user_metadata as any) || {};
+      const s = meta.settings || {};
+      setSettings(prev => ({
+        notifications: {
+          push: typeof s?.notifications?.push === 'boolean' ? s.notifications.push : prev.notifications.push,
+          email: typeof s?.notifications?.email === 'boolean' ? s.notifications.email : prev.notifications.email,
+          sms: typeof s?.notifications?.sms === 'boolean' ? s.notifications.sms : prev.notifications.sms,
+        },
+        privacy: {
+          profileVisible: typeof s?.privacy?.profileVisible === 'boolean' ? s.privacy.profileVisible : prev.privacy.profileVisible,
+          shareLocation: typeof s?.privacy?.shareLocation === 'boolean' ? s.privacy.shareLocation : prev.privacy.shareLocation,
+        },
+        preferences: {
+          language: s?.preferences?.language || prev.preferences.language,
+          darkMode: typeof s?.preferences?.darkMode === 'boolean' ? s.preferences.darkMode : prev.preferences.darkMode,
+          currency: prev.preferences.currency, // do not load or sync currency from metadata
+        },
+      }));
+    })();
   }, []);
 
-  const updateSetting = (category: keyof UserSettings, key: string, value: any) => {
+  const updateSetting = async (category: keyof UserSettings, key: string, value: any) => {
     setSettings(prev => ({
       ...prev,
       [category]: {
@@ -80,6 +106,18 @@ export default function Settings() {
         [key]: value
       }
     }));
+    // Persist live to auth metadata, except currency
+    if (category === 'preferences' && key === 'currency') return;
+    try {
+      const payload = {
+        notifications: { ...settings.notifications, ...(category === 'notifications' ? { [key]: value } : {}) },
+        privacy: { ...settings.privacy, ...(category === 'privacy' ? { [key]: value } : {}) },
+        preferences: { ...settings.preferences, ...(category === 'preferences' ? { [key]: value } : {}) },
+      };
+      // Do not include currency in payload
+      delete (payload.preferences as any).currency;
+      await supabase.auth.updateUser({ data: { settings: payload } });
+    } catch {}
   };
 
   const settingSections: { title: string; items: SettingItem[] }[] = [

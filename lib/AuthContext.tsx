@@ -66,6 +66,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
           }
+          // Log login event once per 6 hours
+          try {
+            const now = Date.now();
+            const last = Number(localStorage.getItem('lastLoginLoggedAt') || '0');
+            if (!last || now - last > 6 * 60 * 60 * 1000) {
+              await fetch('/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: uBase.id, email: uBase.email, phone: profile?.phone })
+              });
+              localStorage.setItem('lastLoginLoggedAt', String(now));
+            }
+          } catch {}
         })();
       } else {
         setUser(null);
@@ -74,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     init();
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const suser = session.user;
         const uBase: User = {
@@ -102,6 +115,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           } as User));
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
+          }
+          // On explicit sign-in, log login event
+          if (event === 'SIGNED_IN') {
+            try {
+              const now = Date.now();
+              const last = Number(localStorage.getItem('lastLoginLoggedAt') || '0');
+              if (!last || now - last > 6 * 60 * 60 * 1000) {
+                await fetch('/api/user/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ userId: uBase.id, email: uBase.email, phone: profile?.phone })
+                });
+                localStorage.setItem('lastLoginLoggedAt', String(now));
+              }
+            } catch {}
           }
         })();
       } else {

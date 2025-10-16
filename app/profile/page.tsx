@@ -46,6 +46,8 @@ export default function Profile() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [profileLoading, setProfileLoading] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [emailPending, setEmailPending] = useState(false);
 
   const loadProfile = async () => {
     if (!authUser?.id) return;
@@ -139,6 +141,17 @@ export default function Profile() {
     loadProfile();
   }, [authUser?.id, authUser?.email]);
 
+  // Track email verification state from auth
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const ev = !!data.user?.email_confirmed_at;
+      setEmailVerified(ev);
+      // If user verified and previously pending, clear pending
+      if (ev) setEmailPending(false);
+    })();
+  }, [authUser?.email]);
+
   // Realtime profile updates
   useEffect(() => {
     if (!authUser?.id) return;
@@ -157,8 +170,6 @@ export default function Profile() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-
-
   // Handle sign out
   const handleSignOut = async () => {
     await logout();
@@ -174,14 +185,37 @@ export default function Profile() {
     setIsEditing(!isEditing);
   };
 
-  // Update user data
+  // Update user data (live). Special handling for email triggers verification email.
   const updateUser = async (field: keyof UserData, value: string) => {
     if (!user) return;
+    if (field === 'email') {
+      try {
+        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined;
+        const { error } = await supabase.auth.updateUser({ email: value }, { emailRedirectTo: redirectTo });
+        if (error) throw error;
+        setEmailPending(true);
+        showToastMessage('Verification email sent. Please verify to update your email.');
+      } catch (e: any) {
+        showToastMessage('Could not send verification email.');
+      }
+      return;
+    }
+    // Live update UI
     const updatedUser = { ...user, [field]: value };
     setUser(updatedUser);
     // Persist to profiles table
     if (field === 'name' || field === 'phone' || field === 'location') {
       await supabase.from('profiles').upsert({ id: user.id, name: updatedUser.name, phone: updatedUser.phone, location: updatedUser.location });
+      // If phone changed, log a contact update event for admin visibility
+      if (field === 'phone') {
+        try {
+          await fetch('/api/user/contact', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.id, email: updatedUser.email, phone: updatedUser.phone })
+          });
+        } catch {}
+      }
     }
   };
 
@@ -374,6 +408,13 @@ export default function Profile() {
                     className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
                     placeholder="Your email"
                   />
+                  <input
+                    type="tel"
+                    value={user?.phone || ''}
+                    onChange={(e) => updateUser('phone', e.target.value)}
+                    className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
+                    placeholder="Your WhatsApp / phone"
+                  />
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3 h-3 text-gray-400" />
                     <input
@@ -389,6 +430,13 @@ export default function Profile() {
                 <>
                   <h1 className="text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
                   <p className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</p>
+                  <div className="mt-1">
+                    {emailVerified ? (
+                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
+                    ) : (
+                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{emailPending ? 'Verification Pending' : 'Not Verified'}</span>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 mt-1">
                     <MapPin className="w-3 h-3 text-gray-400" />
                     <span className="text-xs text-gray-500">{user?.location || 'Location not set'}</span>
