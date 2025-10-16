@@ -9,7 +9,6 @@ import {
   PackageIcon,
   MoneyIcon,
   StarIcon,
-  LocationIcon,
   ChatIcon,
   SearchIcon,
   WebIcon,
@@ -60,7 +59,6 @@ const IconMapper: React.FC<IconMapperProps> = ({
       'package': PackageIcon,
       'money': MoneyIcon,
       'star': StarIcon,
-      'location': LocationIcon,
       'chat': ChatIcon,
       'search': SearchIcon,
       
@@ -100,7 +98,6 @@ export const getIconFromEmoji = (emoji: string): string => {
     '📦': 'package',
     '💰': 'money',
     '⭐': 'star',
-    '📍': 'location',
     '💬': 'chat',
     '🔍': 'search',
     '💻': 'web',

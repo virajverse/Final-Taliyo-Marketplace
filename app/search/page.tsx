@@ -42,7 +42,6 @@ function SearchResultsContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     priceRange: 'all',
-    location: 'all',
     serviceType: 'all',
     rating: 'all'
   });
@@ -101,7 +100,6 @@ function SearchResultsContent() {
   const clearFilters = () => {
     setFilters({
       priceRange: 'all',
-      location: 'all',
       serviceType: 'all',
       rating: 'all'
     });
@@ -114,7 +112,7 @@ function SearchResultsContent() {
       <div className="pt-4 pb-20 px-4">
         {/* Search Header */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -128,14 +126,14 @@ function SearchResultsContent() {
             </div>
             <button
               onClick={handleSearch}
-              className="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors"
+              className="w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-colors"
             >
               Search
             </button>
           </div>
 
           {/* Results Info & Filters */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
             <div>
               <h1 className="text-xl font-bold text-gray-900">
                 {query ? `Search Results for "${query}"` : 'Search Services'}
@@ -146,7 +144,7 @@ function SearchResultsContent() {
             </div>
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="w-full sm:w-auto flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               <SlidersHorizontal className="w-4 h-4" />
               Filters
@@ -180,22 +178,6 @@ function SearchResultsContent() {
                   <option value="1000-5000">₹1,000 - ₹5,000</option>
                   <option value="5000-15000">₹5,000 - ₹15,000</option>
                   <option value="15000+">Above ₹15,000</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <select
-                  value={filters.location}
-                  onChange={(e) => setFilters({...filters, location: e.target.value})}
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Locations</option>
-                  <option value="remote">Remote</option>
-                  <option value="delhi">Delhi NCR</option>
-                  <option value="mumbai">Mumbai</option>
-                  <option value="bangalore">Bangalore</option>
-                  <option value="pune">Pune</option>
                 </select>
               </div>
 

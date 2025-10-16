@@ -94,7 +94,7 @@ export default function Notifications() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <div className="flex items-center gap-4">
             <Link
               href="/profile"
@@ -113,7 +113,7 @@ export default function Notifications() {
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
-              className="text-blue-500 text-sm font-medium hover:text-blue-600 transition-colors"
+              className="w-full sm:w-auto text-blue-500 text-sm font-medium hover:text-blue-600 transition-colors"
             >
               Mark all read
             </button>

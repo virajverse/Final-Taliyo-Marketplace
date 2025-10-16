@@ -113,7 +113,7 @@ export default function Reviews() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-6">
           <Link
             href="/profile"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -134,7 +134,7 @@ export default function Reviews() {
                 key={review.id}
                 className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1">
                       {review.serviceName}

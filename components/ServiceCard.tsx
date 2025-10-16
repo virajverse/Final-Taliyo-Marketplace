@@ -1,6 +1,6 @@
 'use client';
 
-import { Star, MapPin, Clock, Heart } from 'lucide-react';
+import { Star, Clock, Heart } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import BookingModal from './BookingModal';
@@ -14,7 +14,6 @@ interface ServiceCardProps {
     price_min?: number;
     price_max?: number;
     price_type: 'fixed' | 'hourly' | 'negotiable';
-    location?: string;
     is_remote: boolean;
     images: string[];
     rating_average: number;
@@ -180,13 +179,7 @@ export default function ServiceCard({
             </span>
           </div>
 
-          <div className="flex items-center gap-4 mb-3 text-xs text-gray-500">
-            {(service.location || service.is_remote) && (
-              <div className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                <span>{service.is_remote ? 'Remote' : service.location}</span>
-              </div>
-            )}
+          <div className="flex flex-wrap items-center gap-4 mb-3 text-xs text-gray-500">
             {service.duration_minutes && (
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -202,7 +195,7 @@ export default function ServiceCard({
             </div>
             <button
               onClick={handleAddToCart}
-              className={`px-4 py-2 rounded-full text-xs font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
+              className={`px-4 py-2.5 rounded-full text-sm font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
                 isAddedToCart 
                   ? 'bg-green-500 text-white' 
                   : 'bg-gradient-to-r from-blue-500 to-green-500 text-white'

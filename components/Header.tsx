@@ -36,9 +36,12 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
   };
 
   return (
-    <div className="sticky top-0 bg-white shadow-sm z-40 border-b border-gray-200">
+    <div
+      className="sticky top-0 bg-white shadow-sm z-40 border-b border-gray-200"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       <div className="px-4 py-3">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button 
             onClick={toggleMenu}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -52,7 +55,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
             </h1>
           </Link>
           
-          <div className="flex-1 relative">
+          <div className="flex-1 min-w-0 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
@@ -87,7 +90,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           ></div>
           
           {/* Sidebar */}
-          <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 flex flex-col">
+          <div className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-xl z-50 transform transition-transform duration-300 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">

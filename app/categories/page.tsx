@@ -67,7 +67,7 @@ export default function Categories() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         <div className="pt-4 pb-20 px-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {[...Array(8)].map((_, index) => (
               <div key={index} className="bg-white rounded-2xl p-4 animate-pulse">
                 <div className="w-12 h-12 bg-gray-200 rounded-full mb-3"></div>
@@ -99,7 +99,7 @@ export default function Categories() {
             <p className="text-gray-600">Categories will appear here once they're added.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {categories.map((category) => (
               <Link
                 key={category.id}

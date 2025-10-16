@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { Star, MapPin, Clock, ArrowLeft, MessageCircle, ShoppingCart } from 'lucide-react';
+import { Star, Clock, ArrowLeft, MessageCircle, ShoppingCart } from 'lucide-react';
 import BookingModal from '@/components/BookingModal';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -16,7 +16,6 @@ interface Service {
   price_min?: number;
   price_max?: number;
   price_type: 'fixed' | 'hourly' | 'negotiable';
-  location?: string;
   is_remote: boolean;
   images: string[];
   rating_average: number;
@@ -195,7 +194,7 @@ export default function ServiceDetail() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-4 pb-32">
+      <div className="pt-4 pb-40">
         {/* Back Button */}
         <div className="px-4 mb-4">
           <button
@@ -238,7 +237,7 @@ export default function ServiceDetail() {
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{service.title}</h1>
             
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex flex-wrap items-center gap-4 mb-4">
               <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
                 <span className="font-semibold text-gray-900">{service.rating_average}</span>
@@ -246,13 +245,7 @@ export default function ServiceDetail() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mb-4 text-sm text-gray-600">
-              {(service.location || service.is_remote) && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
-                  <span>{service.is_remote ? 'Remote' : service.location}</span>
-                </div>
-              )}
+            <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600">
               {service.duration_minutes && (
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
@@ -281,7 +274,7 @@ export default function ServiceDetail() {
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-4">Service Provider</h3>
               
-              <div className="flex items-start gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <img
                   src={service.provider_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop'}
                   alt={service.provider_name}
@@ -302,7 +295,10 @@ export default function ServiceDetail() {
       </div>
 
       {/* Fixed Bottom Actions */}
-      <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-gray-200 p-2 z-40">
+      <div
+        className="fixed left-0 right-0 bg-white border-t border-gray-200 p-2 z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
+        style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
         <div className="max-w-3xl mx-auto px-2 flex gap-2">
           <button
             onClick={handleAddToCart}
@@ -310,13 +306,6 @@ export default function ServiceDetail() {
           >
             <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
             {isAddedToCart ? '✓ Added' : 'Add to Cart'}
-          </button>
-          <button
-            onClick={handleBookNow}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-green-500 text-white px-3 py-2 rounded-full font-medium text-sm md:text-base md:px-6 md:py-4 hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-1"
-          >
-            <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
-            Book Now
           </button>
         </div>
       </div>

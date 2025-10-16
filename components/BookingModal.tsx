@@ -38,7 +38,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
   const [serverSuccess, setServerSuccess] = useState('');
   const [sameWhatsApp, setSameWhatsApp] = useState(true);
   const [cartPreview, setCartPreview] = useState<any[]>([]);
-  
+  const isCustom = (service?.id === 'custom') || (String(service?.title || '').toLowerCase().includes('custom'));
+
   // अगर यूजर लॉग्ड इन नहीं है तो लॉगिन पेज पर रीडायरेक्ट करें
   const handleAction = () => {
     if (!isLoggedIn) {
@@ -68,10 +69,30 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
     if (isOpen) {
       try {
         const saved = localStorage.getItem('cart');
-        setCartPreview(saved ? JSON.parse(saved) : []);
-      } catch {}
+        const parsed = saved ? JSON.parse(saved) : [];
+        if (!isCustom && (!parsed || parsed.length === 0) && service?.id) {
+          const fallback = [{
+            id: service.id,
+            service_id: service.id,
+            title: service.title,
+            price_min: (service as any)?.price_min,
+            price_max: (service as any)?.price_max,
+            quantity: 1
+          }];
+          setCartPreview(fallback);
+        } else {
+          setCartPreview(parsed || []);
+        }
+      } catch { setCartPreview([]); }
+
+      if (isCustom && !form.requirements.trim()) {
+        setForm(prev => ({
+          ...prev,
+          requirements: 'Describe your custom requirement here...'
+        }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, isCustom, service?.id, service?.title]);
 
   useEffect(() => {
     if (sameWhatsApp && form.whatsappNumber !== form.phone) {
@@ -169,8 +190,27 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       if (form.additionalNotes) fd.append('additionalNotes', form.additionalNotes);
       // cart (optional)
       try {
-        const cart = localStorage.getItem('cart');
-        if (cart) fd.append('cartItems', cart);
+        if (!isCustom) {
+          const saved = localStorage.getItem('cart');
+          let items: any[] = [];
+          if (saved) {
+            try { items = JSON.parse(saved) || []; } catch { items = []; }
+          }
+          if ((!items || items.length === 0) && service?.id) {
+            items = [{
+              id: service.id,
+              service_id: service.id,
+              title: service.title,
+              price_min: (service as any)?.price_min,
+              price_max: (service as any)?.price_max,
+              quantity: 1
+            }];
+          }
+          if (items && items.length > 0) {
+            fd.append('cartItems', JSON.stringify(items));
+          }
+          fd.append('source', 'book_now');
+        }
       } catch {}
       // files
       files.forEach((file, idx) => fd.append(`file_${idx}`, file));
@@ -205,8 +245,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl md:max-w-3xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
-            <h2 className="text-xl font-bold">Place Order</h2>
-            <p className="text-sm text-gray-600 mt-0.5">{service.title} — {priceText()}</p>
+            <h2 className="text-xl font-bold">{isCustom ? 'Custom Booking' : 'Place Order'}</h2>
+            {!isCustom && (
+              <p className="text-sm text-gray-600 mt-0.5">{service.title} — {priceText()}</p>
+            )}
           </div>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full">
             <X className="w-5 h-5" />
@@ -221,21 +263,23 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
           )}
 
-          <div>
-            <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
-            <div className="space-y-2">
-              {cartPreview.map((it, idx) => (
-                <div key={idx} className="flex items-center justify-between text-sm">
-                  <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
-                  <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+          {!isCustom && cartPreview.length > 0 && (
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+              <div className="space-y-2">
+                {cartPreview.map((it, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-sm">
+                    <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
+                    <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+                  </div>
+                ))}
+                <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
+                  <span>Total</span>
+                  <span>₹{cartSubtotal.toLocaleString()}</span>
                 </div>
-              ))}
-              <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
-                <span>Total</span>
-                <span>₹{cartSubtotal.toLocaleString()}</span>
               </div>
             </div>
-          </div>
+          )}
 
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Your Information</h3>

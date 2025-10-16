@@ -12,7 +12,6 @@ import {
   Heart, 
   Clock, 
   Star,
-  MapPin,
   Phone,
   Mail,
   Edit3,
@@ -29,7 +28,6 @@ interface UserData {
   name?: string;
   email?: string;
   phone?: string;
-  location?: string;
   avatar?: string;
   joinDate?: string;
   stats: {
@@ -57,7 +55,6 @@ export default function Profile() {
       name: prev?.name || authUser.name || 'User',
       email: authUser.email,
       phone: prev?.phone,
-      location: (prev as any)?.location,
       avatar: (prev as any)?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       joinDate: (prev as any)?.joinDate || new Date().toISOString(),
       stats: prev?.stats || { bookings: 0, favorites: 0, reviews: 0 },
@@ -68,7 +65,7 @@ export default function Profile() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id,name,phone,location,avatar_url,created_at')
+        .select('id,name,phone,avatar_url,created_at')
         .eq('id', authUser.id)
         .maybeSingle();
       if (!error) p = data;
@@ -78,7 +75,6 @@ export default function Profile() {
       name: p?.name || authUser.name || 'User',
       email: authUser.email,
       phone: p?.phone,
-      location: p?.location,
       avatar: p?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
       joinDate: p?.created_at || new Date().toISOString(),
       stats: { bookings: 0, favorites: 0, reviews: 0 },
@@ -204,8 +200,8 @@ export default function Profile() {
     const updatedUser = { ...user, [field]: value };
     setUser(updatedUser);
     // Persist to profiles table
-    if (field === 'name' || field === 'phone' || field === 'location') {
-      await supabase.from('profiles').upsert({ id: user.id, name: updatedUser.name, phone: updatedUser.phone, location: updatedUser.location });
+    if (field === 'name' || field === 'phone') {
+      await supabase.from('profiles').upsert({ id: user.id, name: updatedUser.name, phone: updatedUser.phone });
       // If phone changed, log a contact update event for admin visibility
       if (field === 'phone') {
         try {
@@ -367,7 +363,7 @@ export default function Profile() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Profile Header */}
-        <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-200">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 mb-6 shadow-sm border border-gray-200 relative">
           {profileLoading ? (
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
@@ -379,14 +375,14 @@ export default function Profile() {
             </div>
           ) : (
           <>
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div className="relative">
               <img
                 src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"}
                 alt="Profile"
-                className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow"
               />
-              <button className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1.5 rounded-full shadow-lg hover:bg-blue-600 transition-colors">
+              <button className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full shadow hover:bg-blue-600 transition-colors">
                 <Camera className="w-3 h-3" />
               </button>
             </div>
@@ -415,31 +411,17 @@ export default function Profile() {
                     className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
                     placeholder="Your WhatsApp / phone"
                   />
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3 h-3 text-gray-400" />
-                    <input
-                      type="text"
-                      value={user?.location || ''}
-                      onChange={(e) => updateUser('location', e.target.value)}
-                      className="text-xs text-gray-500 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none flex-1"
-                      placeholder="Your location"
-                    />
-                  </div>
                 </div>
               ) : (
                 <>
-                  <h1 className="text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
-                  <p className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</p>
-                  <div className="mt-1">
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
                     {emailVerified ? (
-                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
+                      <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
                     ) : (
-                      <span className="inline-block text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{emailPending ? 'Verification Pending' : 'Not Verified'}</span>
+                      <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{emailPending ? 'Verification Pending' : 'Not Verified'}</span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <MapPin className="w-3 h-3 text-gray-400" />
-                    <span className="text-xs text-gray-500">{user?.location || 'Location not set'}</span>
                   </div>
                 </>
               )}
@@ -447,7 +429,7 @@ export default function Profile() {
 
             <button 
               onClick={handleEditProfile}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`absolute top-3 right-3 p-2 rounded-lg transition-colors ${
                 isEditing 
                   ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -461,7 +443,7 @@ export default function Profile() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           {stats.map((stat, index) => (
             <div key={index} className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-200">
               <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />

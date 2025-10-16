@@ -139,14 +139,14 @@ export default function Wishlist() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
             <p className="text-gray-600">{wishlistItems.length} service{wishlistItems.length > 1 ? 's' : ''} saved</p>
           </div>
           <button
             onClick={handleShare}
-            className="bg-white border border-gray-300 text-gray-700 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+            className="w-full sm:w-auto bg-white border border-gray-300 text-gray-700 p-3 rounded-xl hover:bg-gray-50 transition-colors"
           >
             <Share2 className="w-5 h-5" />
           </button>
@@ -154,7 +154,7 @@ export default function Wishlist() {
 
         {/* Quick Actions */}
         <div className="bg-gradient-to-r from-pink-50 to-red-50 border border-pink-200 rounded-2xl p-4 mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <Heart className="w-6 h-6 text-red-500" />
             <div className="flex-1">
               <h3 className="font-semibold text-red-800 mb-1">Your Favorites</h3>
@@ -165,7 +165,7 @@ export default function Wishlist() {
                 // Add all to cart logic
                 wishlistItems.forEach(item => handleAddToCart(item.id));
               }}
-              className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
+              className="w-full sm:w-auto bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
               Add All to Cart

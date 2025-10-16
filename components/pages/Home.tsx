@@ -164,7 +164,7 @@ export default function Home() {
       
       <div className="pt-4 pb-20 px-4">
         <div className="bg-gradient-to-r from-blue-500 to-green-500 rounded-2xl p-6 mb-6 text-white">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
             <div className="flex-1">
               <h2 className="text-xl font-bold mb-2">Find Trusted Services</h2>
               <p className="text-blue-100 text-sm">Connect with verified professionals near you</p>
@@ -180,23 +180,23 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-blue-600 mb-1">1.2K+</div>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <div className="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm border border-gray-100">
+            <div className="text-lg sm:text-2xl font-bold text-blue-600 mb-1">1.2K+</div>
             <div className="text-xs text-gray-600">Services</div>
           </div>
-          <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-green-600 mb-1">50K+</div>
+          <div className="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm border border-gray-100">
+            <div className="text-lg sm:text-2xl font-bold text-green-600 mb-1">50K+</div>
             <div className="text-xs text-gray-600">Happy Customers</div>
           </div>
-          <div className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-100">
-            <div className="text-2xl font-bold text-yellow-600 mb-1">4.8★</div>
+          <div className="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm border border-gray-100">
+            <div className="text-lg sm:text-2xl font-bold text-yellow-600 mb-1">4.8★</div>
             <div className="text-xs text-gray-600">Avg Rating</div>
           </div>
         </div>
 
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
             <h3 className="text-lg font-bold text-gray-900">Popular Categories</h3>
             <Link href="/categories" className="text-sm text-blue-600 font-medium">
               See All

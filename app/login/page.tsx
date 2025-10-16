@@ -14,8 +14,7 @@ import {
   Eye, 
   EyeOff, 
   User,
-  Phone,
-  MapPin
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -36,7 +35,6 @@ export default function Login() {
     name: '',
     email: '',
     phone: '',
-    location: '',
     password: '',
     confirmPassword: ''
   });
@@ -117,7 +115,7 @@ export default function Login() {
         email: signupForm.email,
         password: signupForm.password,
         options: {
-          data: { name: signupForm.name, phone: signupForm.phone, location: signupForm.location },
+          data: { name: signupForm.name, phone: signupForm.phone },
         },
       });
       if (error) throw error;
@@ -129,7 +127,6 @@ export default function Login() {
           name: signupForm.name,
           phone: signupForm.phone,
           avatar_url: avatar,
-          location: signupForm.location || 'Location not set',
         });
       }
       showToastMessage('Account created successfully! Welcome to Taliyo! 🎉');
@@ -149,7 +146,7 @@ export default function Login() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-6">
           <Link
             href="/profile"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -317,21 +314,6 @@ export default function Login() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Location (Optional)
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={signupForm.location}
-                      onChange={(e) => setSignupForm({...signupForm, location: e.target.value})}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                      placeholder="Enter your city/location"
-                    />
-                  </div>
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

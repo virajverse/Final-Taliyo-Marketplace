@@ -14,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`no-scrollbar ${inter.className}`}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
+      <body className={`no-scrollbar overflow-x-hidden ${inter.className}`}>
         <AuthProvider>
           <ProtectedRoute>
             {children}

@@ -110,7 +110,7 @@ export default function Privacy() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-6">
           <Link
             href="/profile"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -149,7 +149,7 @@ export default function Privacy() {
           
           <div className="p-6 space-y-6">
             {currentContent.sections.map((section, index) => (
-              <div key={index} className="flex gap-4">
+              <div key={index} className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                     <section.icon className="w-5 h-5 text-blue-600" />

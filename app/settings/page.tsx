@@ -14,7 +14,6 @@ import {
   Moon, 
   Shield, 
   CreditCard,
-  MapPin,
   Phone,
   Mail,
   ChevronRight
@@ -29,7 +28,6 @@ interface UserSettings {
   };
   privacy: {
     profileVisible: boolean;
-    shareLocation: boolean;
   };
   preferences: {
     language: string;
@@ -58,7 +56,6 @@ export default function Settings() {
     },
     privacy: {
       profileVisible: true,
-      shareLocation: false
     },
     preferences: {
       language: 'English',
@@ -87,7 +84,6 @@ export default function Settings() {
         },
         privacy: {
           profileVisible: typeof s?.privacy?.profileVisible === 'boolean' ? s.privacy.profileVisible : prev.privacy.profileVisible,
-          shareLocation: typeof s?.privacy?.shareLocation === 'boolean' ? s.privacy.shareLocation : prev.privacy.shareLocation,
         },
         preferences: {
           language: s?.preferences?.language || prev.preferences.language,
@@ -145,13 +141,6 @@ export default function Settings() {
           href: '/profile',
           showArrow: true
         },
-        {
-          icon: MapPin,
-          label: 'Address',
-          value: user?.location || 'Add address',
-          href: '/profile',
-          showArrow: true
-        }
       ]
     },
     {
@@ -190,13 +179,6 @@ export default function Settings() {
           type: 'toggle',
           onChange: (value: boolean) => updateSetting('privacy', 'profileVisible', value)
         },
-        {
-          icon: MapPin,
-          label: 'Share Location',
-          value: settings.privacy.shareLocation,
-          type: 'toggle',
-          onChange: (value: boolean) => updateSetting('privacy', 'shareLocation', value)
-        }
       ]
     },
     {
@@ -233,7 +215,7 @@ export default function Settings() {
       
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-6">
           <Link
             href="/profile"
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"

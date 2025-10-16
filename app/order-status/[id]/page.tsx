@@ -100,6 +100,11 @@ export default function OrderStatusPage() {
     return 0;
   }, [timeline, booking?.status]);
 
+  const progressPct = useMemo(() => {
+    if (steps.length <= 1) return 0;
+    return Math.min(100, Math.max(0, Math.round((currentStepIndex / (steps.length - 1)) * 100)));
+  }, [currentStepIndex]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -141,12 +146,12 @@ export default function OrderStatusPage() {
       <Header />
       <div className="p-4 pb-24">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Order Status</h1>
             <p className="text-sm text-gray-600">Order #{booking.id}</p>
           </div>
-          <div className="text-right">
+          <div className="sm:text-right">
             <p className="text-sm text-gray-600">Placed on</p>
             <p className="text-sm font-medium">{booking.created_at ? new Date(booking.created_at).toLocaleString() : '-'}</p>
           </div>
@@ -155,16 +160,27 @@ export default function OrderStatusPage() {
         {/* Timeline */}
         <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4">
           <h3 className="font-semibold text-gray-900 mb-4">Progress</h3>
-          <div className="grid grid-cols-7 gap-2">
-            {steps.map((st, idx) => {
-              const active = idx <= currentStepIndex;
-              return (
-                <div key={st.key} className={`flex flex-col items-center text-center p-2 rounded-lg ${active ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
-                  {active ? <CheckCircle className="w-5 h-5 text-green-600" /> : <Clock className="w-5 h-5 text-gray-400" />}
-                  <span className={`mt-1 text-xs ${active ? 'text-green-700' : 'text-gray-600'}`}>{st.label}</span>
+          <div className="relative">
+            <div className="overflow-x-auto pb-2">
+              <div className="min-w-[560px] sm:min-w-0 px-1">
+                <div className="relative h-2 bg-gray-200 rounded-full">
+                  <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-green-500 rounded-full" style={{ width: `${progressPct}%` }} />
                 </div>
-              );
-            })}
+                <div className="mt-4 grid grid-cols-7 gap-2">
+                  {steps.map((st, idx) => {
+                    const active = idx <= currentStepIndex;
+                    return (
+                      <div key={st.key} className="flex flex-col items-center text-center">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 ${active ? 'border-green-500 bg-green-50 text-green-600' : 'border-gray-300 bg-white text-gray-400'}`}>
+                          {active ? <CheckCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                        </div>
+                        <span className={`mt-2 text-[11px] sm:text-xs leading-tight ${active ? 'text-green-700' : 'text-gray-600'}`}>{st.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
 
           {timeline.length > 0 && (
