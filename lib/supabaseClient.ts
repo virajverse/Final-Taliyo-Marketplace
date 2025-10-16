@@ -12,9 +12,18 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const dynamicStorage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return null as any;
-    const useLocal = (localStorage.getItem('rememberMe') || 'true') === 'true';
-    const store = useLocal ? localStorage : sessionStorage;
-    return store.getItem(key) as any;
+    try {
+      const useLocal = (localStorage.getItem('rememberMe') || 'true') === 'true';
+      const primary = useLocal ? localStorage : sessionStorage;
+      const secondary = useLocal ? sessionStorage : localStorage;
+      const val = primary.getItem(key) ?? secondary.getItem(key);
+      return val as any;
+    } catch {
+      // Fallback: try both storages
+      try { return localStorage.getItem(key) as any; } catch {}
+      try { return sessionStorage.getItem(key) as any; } catch {}
+      return null as any;
+    }
   },
   setItem: (key: string, value: string) => {
     if (typeof window === 'undefined') return;

@@ -16,6 +16,7 @@ interface AuthContextType {
   isLoggedIn: boolean;
   user: User | null;
   isAuthenticated: boolean;
+  authLoading: boolean;
   login: (user: User) => void;
   logout: () => void;
   redirectToLogin: () => void;
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
   const router = useRouter();
 
   // isAuthenticated is an alias for isLoggedIn for compatibility
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(uBase);
         setIsLoggedIn(true);
+        setAuthLoading(false);
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
@@ -83,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUser(null);
         setIsLoggedIn(false);
+        setAuthLoading(false);
       }
     };
     init();
@@ -97,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         setUser(uBase);
         setIsLoggedIn(true);
+        setAuthLoading(true);
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
@@ -131,10 +136,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
             } catch {}
           }
+          setAuthLoading(false);
         })();
       } else {
         setUser(null);
         setIsLoggedIn(false);
+        setAuthLoading(false);
       }
     });
     return () => {
@@ -169,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isLoggedIn, 
       user, 
       isAuthenticated,
+      authLoading,
       login, 
       logout, 
       redirectToLogin,
