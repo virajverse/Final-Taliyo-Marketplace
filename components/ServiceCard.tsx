@@ -4,6 +4,7 @@ import { Star, MapPin, Clock, Heart } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
 import BookingModal from './BookingModal';
+import { useAuth } from '@/lib/AuthContext';
 
 interface ServiceCardProps {
   service: {
@@ -30,16 +31,19 @@ interface ServiceCardProps {
   };
   onToggleWishlist?: (serviceId: string) => void;
   isInWishlist?: boolean;
+  onAddedToCart?: (newCount: number) => void;
 }
 
 export default function ServiceCard({ 
   service, 
   onToggleWishlist, 
-  isInWishlist = false 
+  isInWishlist = false,
+  onAddedToCart
 }: ServiceCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const { isLoggedIn, redirectToLogin } = useAuth();
   const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
   const primaryImage = images[0] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
 
@@ -67,6 +71,11 @@ export default function ServiceCard({
   };
 
   const handleAddToCart = () => {
+    if (!isLoggedIn) {
+      redirectToLogin();
+      return;
+    }
+
     // Get existing cart from localStorage
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
     
@@ -78,6 +87,16 @@ export default function ServiceCard({
       existingCart[existingItemIndex].quantity += 1;
     } else {
       // Add new item
+      const firstImage = Array.isArray(service.images)
+        ? service.images[0]
+        : (() => {
+            try {
+              const parsed = JSON.parse(service.images as unknown as string);
+              return Array.isArray(parsed) ? parsed[0] : (service.images as unknown as string);
+            } catch {
+              return service.images as unknown as string;
+            }
+          })();
       const cartItem = {
         id: Date.now(),
         service_id: service.id,
@@ -85,7 +104,7 @@ export default function ServiceCard({
         price_min: service.price_min,
         price_max: service.price_max,
         price_type: service.price_type,
-        images: Array.isArray(service.images) ? service.images[0] : service.images,
+        images: firstImage,
         provider_name: service.provider_name,
         quantity: 1
       };
@@ -94,6 +113,9 @@ export default function ServiceCard({
     
     // Save to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart));
+
+    const newCount = existingCart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+    onAddedToCart?.(newCount);
     
     // Show feedback
     setIsAddedToCart(true);

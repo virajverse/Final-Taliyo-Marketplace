@@ -7,10 +7,11 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { ShoppingCart, Trash2, Plus, Minus, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import BookingModal from '@/components/BookingModal';
+import OrderProceedModal from '@/components/OrderProceedModal';
 
 interface CartItem {
   id: number;
-  service_id: number;
+  service_id: string;
   title: string;
   price_min?: number;
   price_max?: number;
@@ -22,38 +23,16 @@ interface CartItem {
 
 export default function Cart() {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isProceedModalOpen, setIsProceedModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      id: 1,
-      service_id: 1,
-      title: 'Professional Web Development',
-      price_min: 12000,
-      price_max: 15000,
-      price_type: 'fixed',
-      images: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-      provider_name: 'Tech Solutions',
-      quantity: 1
-    },
-    {
-      id: 2,
-      service_id: 2,
-      title: 'Digital Marketing Package',
-      price_min: 8000,
-      price_type: 'fixed',
-      images: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
-      provider_name: 'Digital Growth',
-      quantity: 1
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const savedCart = typeof window !== 'undefined' ? localStorage.getItem('cart') : null;
+      return savedCart ? JSON.parse(savedCart) : [];
+    } catch {
+      return [];
     }
-  ]);
-
-  // Load cart from localStorage on component mount
-  React.useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCartItems(JSON.parse(savedCart));
-    }
-  }, []);
+  });
 
   // Save cart to localStorage whenever cartItems change
   React.useEffect(() => {
@@ -81,8 +60,7 @@ export default function Cart() {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (getItemPrice(item) * item.quantity), 0);
-  const tax = subtotal * 0.18; // 18% GST
-  const total = subtotal + tax;
+  const total = subtotal;
 
   const handleWhatsAppSupport = () => {
     const message = `Hi! I need help with my cart on Taliyo.`;
@@ -188,11 +166,6 @@ export default function Cart() {
               <span>₹{subtotal.toLocaleString()}</span>
             </div>
             
-            <div className="flex justify-between text-gray-600">
-              <span>GST (18%)</span>
-              <span>₹{tax.toLocaleString()}</span>
-            </div>
-            
             <div className="border-t border-gray-200 pt-3">
               <div className="flex justify-between text-lg font-bold text-gray-900">
                 <span>Total Amount</span>
@@ -202,6 +175,18 @@ export default function Cart() {
           </div>
         </div>
 
+        {/* Primary checkout action */}
+        <div className="mb-6">
+          <button
+            onClick={() => {
+              // Proceed to Order uses minimal order modal (separate from Booking)
+              setIsProceedModalOpen(true);
+            }}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-3 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 shadow-sm"
+          >
+            Proceed to Order
+          </button>
+        </div>
         <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6">
           <div className="flex items-center gap-3">
             <div className="text-2xl">🟢</div>
@@ -234,6 +219,11 @@ export default function Cart() {
 
       <BottomNavigation />
       
+      <OrderProceedModal
+        isOpen={isProceedModalOpen}
+        onClose={() => setIsProceedModalOpen(false)}
+      />
+
       {selectedService && (
         <BookingModal
           isOpen={isBookingModalOpen}

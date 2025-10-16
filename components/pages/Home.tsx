@@ -50,7 +50,7 @@ export default function Home() {
   const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
   const [popularCategories, setPopularCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cartCount] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
   
   const handleWhatsAppClick = () => {
     window.open('https://wa.me/+917042523611', '_blank');
@@ -61,6 +61,19 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedCart = localStorage.getItem('cart');
+    if (savedCart) {
+      try {
+        const parsed = JSON.parse(savedCart);
+        const count = parsed.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+        setCartCount(count);
+      } catch {}
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase
       .channel('home_realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchData())
@@ -248,6 +261,7 @@ export default function Home() {
                   key={service.id}
                   service={service}
                   onToggleWishlist={handleToggleWishlist}
+                  onAddedToCart={(count) => setCartCount(count)}
                 />
               ))}
             </div>

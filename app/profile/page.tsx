@@ -45,15 +45,32 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [profileLoading, setProfileLoading] = useState(false);
 
   const loadProfile = async () => {
     if (!authUser?.id) return;
+    // Immediate UI: prime user from auth without waiting for network
+    setUser(prev => ({
+      id: authUser.id,
+      name: prev?.name || authUser.name || 'User',
+      email: authUser.email,
+      phone: prev?.phone,
+      location: (prev as any)?.location,
+      avatar: (prev as any)?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      joinDate: (prev as any)?.joinDate || new Date().toISOString(),
+      stats: prev?.stats || { bookings: 0, favorites: 0, reviews: 0 },
+    } as UserData));
     // Load profile row
-    const { data: p } = await supabase
-      .from('profiles')
-      .select('id,name,phone,location,avatar_url,created_at')
-      .eq('id', authUser.id)
-      .maybeSingle();
+    setProfileLoading(true);
+    let p: any | null = null;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id,name,phone,location,avatar_url,created_at')
+        .eq('id', authUser.id)
+        .maybeSingle();
+      if (!error) p = data;
+    } catch {}
     const u: UserData = {
       id: authUser.id,
       name: p?.name || authUser.name || 'User',
@@ -65,6 +82,7 @@ export default function Profile() {
       stats: { bookings: 0, favorites: 0, reviews: 0 },
     };
     setUser(u);
+    setProfileLoading(false);
 
     // Stats
     const email = authUser.email || '';
@@ -124,6 +142,7 @@ export default function Profile() {
   // Realtime profile updates
   useEffect(() => {
     if (!authUser?.id) return;
+    if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase
       .channel('profile_rt')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${authUser.id}` }, () => loadProfile())
@@ -315,6 +334,17 @@ export default function Profile() {
       <div className="pt-4 pb-20 px-4">
         {/* Profile Header */}
         <div className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-200">
+          {profileLoading ? (
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-gray-200 animate-pulse" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-1/4 animate-pulse" />
+                <div className="h-3 bg-gray-200 rounded w-1/5 animate-pulse" />
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="flex items-center gap-4 mb-4">
             <div className="relative">
               <img
@@ -378,18 +408,8 @@ export default function Profile() {
               <Edit3 className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Contact Info */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div className="flex items-center gap-2 text-gray-600">
-              <Phone className="w-4 h-4" />
-              <span>{user?.phone || 'Phone not set'}</span>
-            </div>
-            <div className="flex items-center gap-2 text-gray-600">
-              <Mail className="w-4 h-4" />
-              <span>Verified</span>
-            </div>
-          </div>
+          </>
+          )}
         </div>
 
         {/* Stats */}

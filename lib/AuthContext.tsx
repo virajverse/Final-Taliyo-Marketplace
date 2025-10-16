@@ -39,26 +39,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!mounted) return;
       if (session?.user) {
         const suser = session.user;
-        // Try loading profile row (optional)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('id,name,phone,avatar_url')
-          .eq('id', suser.id)
-          .maybeSingle();
-        const u: User = {
+        const uBase: User = {
           id: suser.id,
-          name: profile?.name || (suser.user_metadata as any)?.name,
+          name: (suser.user_metadata as any)?.name,
           email: suser.email || undefined,
-          phone: profile?.phone,
-          avatar_url: profile?.avatar_url,
         };
-        setUser(u);
+        setUser(uBase);
         setIsLoggedIn(true);
-        // legacy compat for pages filtering by email/phone
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('userData', JSON.stringify({ email: u.email }));
-          if (u.phone) localStorage.setItem('userPhone', u.phone);
+        if (typeof window !== 'undefined' && uBase.email) {
+          localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
+        (async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id,name,phone,avatar_url')
+            .eq('id', suser.id)
+            .maybeSingle();
+          if (!mounted) return;
+          setUser(prev => ({
+            id: uBase.id,
+            name: profile?.name || prev?.name,
+            email: uBase.email,
+            phone: profile?.phone,
+            avatar_url: profile?.avatar_url,
+          } as User));
+          if (typeof window !== 'undefined' && profile?.phone) {
+            localStorage.setItem('userPhone', profile.phone);
+          }
+        })();
       } else {
         setUser(null);
         setIsLoggedIn(false);
@@ -69,15 +77,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         const suser = session.user;
-        setUser({
+        const uBase: User = {
           id: suser.id,
           name: (suser.user_metadata as any)?.name,
           email: suser.email || undefined,
-        });
+        };
+        setUser(uBase);
         setIsLoggedIn(true);
-        if (typeof window !== 'undefined' && suser.email) {
-          localStorage.setItem('userData', JSON.stringify({ email: suser.email }));
+        if (typeof window !== 'undefined' && uBase.email) {
+          localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
+        (async () => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id,name,phone,avatar_url')
+            .eq('id', suser.id)
+            .maybeSingle();
+          setUser(prev => ({
+            id: uBase.id,
+            name: profile?.name || prev?.name,
+            email: uBase.email,
+            phone: profile?.phone,
+            avatar_url: profile?.avatar_url,
+          } as User));
+          if (typeof window !== 'undefined' && profile?.phone) {
+            localStorage.setItem('userPhone', profile.phone);
+          }
+        })();
       } else {
         setUser(null);
         setIsLoggedIn(false);

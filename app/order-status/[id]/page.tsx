@@ -1,0 +1,208 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Header from '@/components/Header';
+import BottomNavigation from '@/components/BottomNavigation';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { supabase } from '@/lib/supabaseClient';
+
+interface BookingRow {
+  id: string;
+  service_title?: string;
+  provider_name?: string;
+  status?: string;
+  created_at?: string;
+  updated_at?: string;
+  cart_items?: string | null;
+  additional_notes?: string | null;
+}
+
+export default function OrderStatusPage() {
+  const params = useParams();
+  const router = useRouter();
+  const [booking, setBooking] = useState<BookingRow | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // 7-step timeline
+  const steps = [
+    { key: 'requested', label: 'Requested' },
+    { key: 'details_confirmed', label: 'Details Confirmed' },
+    { key: 'quoted', label: 'Quoted' },
+    { key: 'advance_paid', label: 'Advance Paid' },
+    { key: 'work_started', label: 'Work Started' },
+    { key: 'in_review', label: 'In Review' },
+    { key: 'delivered', label: 'Delivered' },
+  ];
+
+  useEffect(() => {
+    if (!params?.id) return;
+    let mounted = true;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('id', params.id as string)
+          .single();
+        if (error) throw error;
+        if (!mounted) return;
+        setBooking(data as unknown as BookingRow);
+      } catch (e) {
+        setBooking(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    load();
+
+    const channel = supabase
+      .channel('order_status_page')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `id=eq.${params.id}` }, () => load())
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [params?.id]);
+
+  const timeline = useMemo(() => {
+    try {
+      const notes = booking?.additional_notes ? JSON.parse(booking.additional_notes) : {};
+      return Array.isArray(notes?.timeline) ? notes.timeline as Array<{ step: number; label: string; at: string; note?: string; }> : [];
+    } catch {
+      return [];
+    }
+  }, [booking?.additional_notes]);
+
+  const cartItems = useMemo(() => {
+    try {
+      return booking?.cart_items ? JSON.parse(booking.cart_items) : [];
+    } catch {
+      return [];
+    }
+  }, [booking?.cart_items]);
+
+  const currentStepIndex = useMemo(() => {
+    // Prefer last timeline entry if present
+    if (timeline.length) {
+      const last = timeline[timeline.length - 1];
+      return Math.max(0, Math.min(steps.length - 1, (Number(last.step) || 1) - 1));
+    }
+    // Fallback map from status
+    const s = (booking?.status || '').toLowerCase();
+    if (s === 'pending') return 0; // Requested
+    if (s === 'confirmed') return 2; // Quoted
+    if (s === 'in-progress') return 4; // Work Started
+    if (s === 'completed') return 6; // Delivered
+    return 0;
+  }, [timeline, booking?.status]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-1/2 bg-gray-200 rounded" />
+            <div className="h-4 w-1/3 bg-gray-200 rounded" />
+            <div className="h-24 bg-gray-200 rounded" />
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
+
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="p-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="flex items-center gap-2 text-gray-700">
+              <AlertCircle className="w-5 h-5" />
+              <span>Order not found</span>
+            </div>
+            <button onClick={() => router.back()} className="mt-4 text-blue-600">Go Back</button>
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
+
+  const total = cartItems.reduce((sum: number, it: any) => sum + ((Number(it?.price_min) || 0) * (it?.quantity || 1)), 0);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="p-4 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Order Status</h1>
+            <p className="text-sm text-gray-600">Order #{booking.id}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm text-gray-600">Placed on</p>
+            <p className="text-sm font-medium">{booking.created_at ? new Date(booking.created_at).toLocaleString() : '-'}</p>
+          </div>
+        </div>
+
+        {/* Timeline */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4">
+          <h3 className="font-semibold text-gray-900 mb-4">Progress</h3>
+          <div className="grid grid-cols-7 gap-2">
+            {steps.map((st, idx) => {
+              const active = idx <= currentStepIndex;
+              return (
+                <div key={st.key} className={`flex flex-col items-center text-center p-2 rounded-lg ${active ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'}`}>
+                  {active ? <CheckCircle className="w-5 h-5 text-green-600" /> : <Clock className="w-5 h-5 text-gray-400" />}
+                  <span className={`mt-1 text-xs ${active ? 'text-green-700' : 'text-gray-600'}`}>{st.label}</span>
+                </div>
+              );
+            })}
+          </div>
+
+          {timeline.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Timeline</h4>
+              <div className="space-y-2 text-sm">
+                {timeline.map((t, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div>
+                      <span className="font-medium">Step {t.step}:</span> {t.label}
+                      {t.note && <span className="text-gray-600"> — {t.note}</span>}
+                    </div>
+                    <div className="text-xs text-gray-500">{new Date(t.at).toLocaleString()}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Items */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4">
+          <h3 className="font-semibold text-gray-900 mb-3">Items</h3>
+          <div className="space-y-2 text-sm">
+            {cartItems.map((it: any, idx: number) => (
+              <div key={idx} className="flex items-center justify-between">
+                <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
+                <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+              </div>
+            ))}
+            <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
+              <span>Total</span>
+              <span>₹{total.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <BottomNavigation />
+    </div>
+  );
+}

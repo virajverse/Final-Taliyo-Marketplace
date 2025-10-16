@@ -124,7 +124,16 @@ export default function ServiceDetail() {
       if (idx > -1) {
         existingCart[idx].quantity += 1;
       } else {
-        const firstImage = Array.isArray(service.images) ? service.images[0] : service.images;
+        const firstImage = Array.isArray(service.images)
+          ? service.images[0]
+          : (() => {
+              try {
+                const parsed = typeof service.images === 'string' ? JSON.parse(service.images as unknown as string) : service.images;
+                return Array.isArray(parsed) ? parsed[0] : (service.images as unknown as string);
+              } catch {
+                return service.images as unknown as string;
+              }
+            })();
         const cartItem = {
           id: Date.now(),
           service_id: service.id,

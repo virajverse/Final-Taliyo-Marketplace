@@ -26,11 +26,11 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(true);
 
   const [signupForm, setSignupForm] = useState({
     name: '',
@@ -77,6 +77,11 @@ export default function Login() {
     }
 
     try {
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
+        }
+      } catch {}
       const { error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
@@ -232,6 +237,21 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="flex items-center justify-between mt-3">
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="rounded"
+                  />
+                  Remember me
+                </label>
+                <button type="button" onClick={handleResetPassword} className="text-blue-500 text-sm hover:text-blue-600">
+                  Forgot your password?
+                </button>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -239,12 +259,6 @@ export default function Login() {
               >
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
-
-              <div className="mt-4 text-center">
-                <button type="button" onClick={handleResetPassword} className="text-blue-500 text-sm hover:text-blue-600">
-                  Forgot your password?
-                </button>
-              </div>
             </div>
           </form>
         ) : (

@@ -36,6 +36,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
   const [serverSuccess, setServerSuccess] = useState('');
+  const [sameWhatsApp, setSameWhatsApp] = useState(true);
+  const [cartPreview, setCartPreview] = useState<any[]>([]);
   
   // अगर यूजर लॉग्ड इन नहीं है तो लॉगिन पेज पर रीडायरेक्ट करें
   const handleAction = () => {
@@ -61,6 +63,21 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       }));
     }
   }, [isLoggedIn, user]);
+
+  useEffect(() => {
+    if (isOpen) {
+      try {
+        const saved = localStorage.getItem('cart');
+        setCartPreview(saved ? JSON.parse(saved) : []);
+      } catch {}
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (sameWhatsApp && form.whatsappNumber !== form.phone) {
+      setForm(prev => ({ ...prev, whatsappNumber: prev.phone }));
+    }
+  }, [sameWhatsApp, form.phone]);
 
   const priceText = () => {
     const min = (service as any).price_min as number | undefined;
@@ -118,7 +135,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
     if (!form.fullName.trim()) v.fullName = 'Full name is required';
     if (!form.phone.trim()) v.phone = 'Phone number is required';
     if (form.phone && form.phone.replace(/\D/g, '').length < 10) v.phone = 'Enter a valid phone number';
-    if (!form.requirements.trim() || form.requirements.trim().length < 10) v.requirements = 'Please describe your requirement (min 10 chars)';
+    if (!form.email.trim()) v.email = 'Email is required';
+    else if (!/.+@.+\..+/.test(form.email)) v.email = 'Enter a valid email';
+    if (!form.whatsappNumber.trim()) v.whatsappNumber = 'WhatsApp number is required';
+    else if (form.whatsappNumber.replace(/\D/g, '').length < 10) v.whatsappNumber = 'Enter a valid WhatsApp number';
+    if (form.requirements && form.requirements.trim() && form.requirements.trim().length < 10) v.requirements = 'Please add a bit more detail (min 10 chars)';
     setValidation(v);
     return Object.keys(v).length === 0;
   };
@@ -177,6 +198,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
 
   if (!isOpen) return null;
 
+  const cartSubtotal = cartPreview.reduce((sum, it) => sum + ((Number((it as any)?.price_min) || 0) * ((it as any)?.quantity || 1)), 0);
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-start md:items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl md:max-w-3xl">
@@ -197,6 +220,22 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
           {serverSuccess && (
             <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
           )}
+
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-3">Order Summary</h3>
+            <div className="space-y-2">
+              {cartPreview.map((it, idx) => (
+                <div key={idx} className="flex items-center justify-between text-sm">
+                  <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
+                  <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+                </div>
+              ))}
+              <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">
+                <span>Total</span>
+                <span>₹{cartSubtotal.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
 
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Your Information</h3>
@@ -226,38 +265,51 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
                 {validation.phone && <p className="text-xs text-red-600 mt-1">{validation.phone}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                 <input
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.email ? 'border-red-500' : 'border-gray-300'}`}
                   placeholder="your@email.com"
+                  required
                 />
+                {validation.email && <p className="text-xs text-red-600 mt-1">{validation.email}</p>}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number (Optional)</label>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">WhatsApp Number *</label>
+                  <label className="flex items-center gap-2 text-xs text-gray-600">
+                    <input type="checkbox" checked={sameWhatsApp} onChange={(e) => {
+                      setSameWhatsApp(e.target.checked);
+                      if (e.target.checked) setForm(prev => ({ ...prev, whatsappNumber: prev.phone }));
+                    }} />
+                    Same as phone
+                  </label>
+                </div>
                 <input
                   type="tel"
                   value={form.whatsappNumber}
                   onChange={(e) => setForm({ ...form, whatsappNumber: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 border-gray-300"
-                  placeholder="If different from phone"
+                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.whatsappNumber ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="WhatsApp number"
+                  required
+                  disabled={sameWhatsApp}
                 />
+                {validation.whatsappNumber && <p className="text-xs text-red-600 mt-1">{validation.whatsappNumber}</p>}
               </div>
             </div>
           </div>
 
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Project Requirements</h3>
-            <label className="block text-sm font-medium text-gray-700 mb-1">What do you need? Please describe in detail *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">What do you need? Please describe in detail</label>
             <textarea
               value={form.requirements}
               onChange={(e) => setForm({ ...form, requirements: e.target.value })}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${validation.requirements ? 'border-red-500' : 'border-gray-300'}`}
               rows={5}
               placeholder="e.g., I need an e-commerce website with payment gateway..."
-              required
             />
             {validation.requirements && <p className="text-xs text-red-600 mt-1">{validation.requirements}</p>}
           </div>
