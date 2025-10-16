@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { MessageCircle } from "lucide-react";
 
@@ -11,6 +11,13 @@ type Banner = {
   cta_text?: string | null;
   cta_url?: string | null;
   cta_align?: 'left' | 'center' | 'right' | null;
+  start_at?: string | null;
+  end_at?: string | null;
+  target?: 'all' | 'mobile' | 'desktop' | null;
+  duration_ms?: number | null;
+  overlay_opacity?: number | null;
+  alt_text?: string | null;
+  aria_label?: string | null;
 };
 
 export default function BannerSlider() {
@@ -36,12 +43,26 @@ export default function BannerSlider() {
 
         const { data } = await supabase
           .from("banners")
-          .select("id,image_url,video_url,cta_text,cta_url,cta_align")
+          .select("*")
           .eq("active", true)
           .order("sort_order", { ascending: true })
           .limit(limit);
         if (!mounted) return;
-        if (data && data.length) setBanners(data as any);
+        if (data && data.length) {
+          const now = Date.now();
+          const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : true;
+          const scheduled = (data as any[]).filter((b) => {
+            const s = b.start_at ? Date.parse(b.start_at) : null;
+            const e = b.end_at ? Date.parse(b.end_at) : null;
+            if (s && now < s) return false;
+            if (e && now > e) return false;
+            const tgt = (b.target || 'all') as Banner['target'];
+            if (tgt === 'mobile' && !isMobile) return false;
+            if (tgt === 'desktop' && isMobile) return false;
+            return true;
+          });
+          setBanners(scheduled as any);
+        }
         else setBanners([
           { id: 'default-1', image_url: '', cta_text: '+91 7042523611', cta_url: 'https://wa.me/+917042523611', cta_align: 'center' }
         ]);
@@ -56,12 +77,40 @@ export default function BannerSlider() {
 
   useEffect(() => {
     if (slides.length <= 1) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % slides.length), 4000);
-    return () => clearInterval(id);
-  }, [slides.length]);
+    const ms = Math.max(1500, Number(slides[active]?.duration_ms || 4000));
+    const id = setTimeout(() => setActive((i) => (i + 1) % slides.length), ms);
+    return () => clearTimeout(id);
+  }, [slides, active]);
 
-  const handleCTA = (url?: string | null) => {
-    if (!url) return;
+  const impressedRef = useRef(new Set<string>());
+  const clickedRef = useRef(new Set<string>());
+
+  const track = async (id: string, type: 'impression' | 'click') => {
+    try {
+      await fetch('/api/banners/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, type })
+      });
+    } catch {}
+  };
+
+  useEffect(() => {
+    const current = slides[active];
+    if (!current) return;
+    if (!impressedRef.current.has(current.id)) {
+      impressedRef.current.add(current.id);
+      track(current.id, 'impression');
+    }
+  }, [active, slides]);
+
+  const handleCTA = (banner?: Banner) => {
+    if (!banner?.cta_url) return;
+    if (!clickedRef.current.has(banner.id)) {
+      clickedRef.current.add(banner.id);
+      track(banner.id, 'click');
+    }
+    const url = banner.cta_url;
     if (url.startsWith("http")) window.open(url, "_blank");
     else window.location.href = url;
   };
@@ -89,12 +138,13 @@ export default function BannerSlider() {
               ) : b.image_url ? (
                 <img src={b.image_url} alt="banner" className="absolute inset-0 w-full h-full object-cover" />
               ) : null}
-              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${Math.min(0.6, Math.max(0, Number(b.overlay_opacity ?? 0.1)))})` }} />
               {b.cta_text ? (
                 <div className={`absolute inset-x-0 bottom-3 px-4 flex ${justify}`}>
                   <button
-                    onClick={() => handleCTA(b.cta_url)}
+                    onClick={() => handleCTA(b)}
                     className="bg-white text-gray-800 px-4 py-2 rounded-full text-sm font-semibold hover:bg-gray-100 transition-colors flex items-center gap-2 shadow"
+                    aria-label={b.aria_label || b.cta_text || 'Open link'}
                   >
                     <MessageCircle className="w-4 h-4 text-green-600" />
                     {b.cta_text}
