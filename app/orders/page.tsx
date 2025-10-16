@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 
@@ -308,6 +309,13 @@ export default function Orders() {
 
               {/* Action Buttons */}
               <div className="flex gap-2">
+                <Link
+                  href={`/order-status/${order.id}`}
+                  className="flex-1 bg-white border border-blue-100 text-blue-600 py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Clock className="w-4 h-4" />
+                  View Status
+                </Link>
                 <button
                   onClick={() => handleContactProvider(order)}
                   className="flex-1 bg-blue-50 text-blue-600 py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
