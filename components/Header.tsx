@@ -87,7 +87,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           ></div>
           
           {/* Sidebar */}
-          <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300">
+          <div className="fixed top-0 left-0 h-full w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
@@ -102,7 +102,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
             </div>
 
             {/* Menu Items */}
-            <div className="p-4">
+            <div className="p-4 flex-1 overflow-y-auto">
               <nav className="space-y-2">
                 {menuItems.map((item, index) => (
                   <Link
