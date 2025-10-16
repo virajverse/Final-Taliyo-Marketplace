@@ -187,16 +187,27 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       fd.append('requirements', form.requirements);
       fd.append('budgetRange', form.budgetRange || '');
       fd.append('deliveryPreference', form.deliveryPreference || '');
+      // snake_case duplicates for compatibility
+      fd.append('full_name', form.fullName);
+      fd.append('customer_phone', form.phone);
+      if (form.email) fd.append('customer_email', form.email);
+      fd.append('requirements_text', form.requirements);
+      fd.append('budget_range', form.budgetRange || '');
+      fd.append('delivery_preference', form.deliveryPreference || '');
       if (form.additionalNotes) fd.append('additionalNotes', form.additionalNotes);
       // cart (optional)
       try {
+        let items: any[] = [];
         if (!isCustom) {
           const saved = localStorage.getItem('cart');
-          let items: any[] = [];
           if (saved) {
             try { items = JSON.parse(saved) || []; } catch { items = []; }
           }
-          if ((!items || items.length === 0) && service?.id) {
+        }
+        if ((!items || items.length === 0)) {
+          if (isCustom) {
+            items = [{ id: 'custom', service_id: 'custom', title: 'Custom Order', quantity: 1, custom: true }];
+          } else if (service?.id) {
             items = [{
               id: service.id,
               service_id: service.id,
@@ -206,11 +217,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
               quantity: 1
             }];
           }
-          if (items && items.length > 0) {
-            fd.append('cartItems', JSON.stringify(items));
-          }
-          fd.append('source', 'book_now');
         }
+        if (items && items.length > 0) {
+          const cartJson = JSON.stringify(items);
+          fd.append('cartItems', cartJson);
+          fd.append('cart_items', cartJson);
+          fd.append('cart', cartJson);
+        }
+        fd.append('source', isCustom ? 'custom_order' : 'book_now');
       } catch {}
       // files
       files.forEach((file, idx) => fd.append(`file_${idx}`, file));
