@@ -10,6 +10,7 @@ import IconMapper from '@/components/IconMapper';
 import { SearchIcon } from '@/components/CustomIcons';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import BannerSlider from '@/components/BannerSlider';
 
 interface Service {
   id: string;
@@ -163,22 +164,7 @@ export default function Home() {
       <Header cartCount={cartCount} />
       
       <div className="pt-4 pb-20 px-4">
-        <div className="bg-gradient-to-r from-blue-500 to-green-500 rounded-2xl p-6 mb-6 text-white">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-            <div className="flex-1">
-              <h2 className="text-xl font-bold mb-2">Find Trusted Services</h2>
-              <p className="text-blue-100 text-sm">Connect with verified professionals near you</p>
-              <button
-                onClick={handleWhatsAppSupport}
-                className="mt-3 bg-white text-green-600 px-4 py-2 rounded-full text-sm font-bold hover:bg-green-50 transition-colors flex items-center gap-2 w-fit"
-              >
-                <MessageCircle className="w-4 h-4" />
-                +91 7042523611
-              </button>
-            </div>
-            <div className="text-4xl">👋</div>
-          </div>
-        </div>
+        <BannerSlider />
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm border border-gray-100">
