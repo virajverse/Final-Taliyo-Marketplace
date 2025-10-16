@@ -269,8 +269,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col max-h-[80vh]">
-          <div className="px-6 py-5 space-y-6 overflow-y-auto no-scrollbar flex-1">
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto no-scrollbar" style={{ maxHeight: '85dvh' }}>
+          <div className="px-6 py-5 space-y-6 flex-1">
             {serverError && (
               <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
             )}
@@ -443,7 +443,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-gray-200 bg-white">
+          <div className="sticky bottom-0 px-6 py-4 border-t border-gray-200 bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
               <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
