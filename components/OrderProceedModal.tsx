@@ -121,7 +121,7 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start md:items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[70] flex items-start md:items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold">Proceed to Order</h2>
@@ -130,24 +130,25 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-5 max-h-[80vh] overflow-y-auto no-scrollbar">
-          {serverError && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
-          )}
-          {serverSuccess && (
-            <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
-          )}
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto no-scrollbar" style={{ maxHeight: '85dvh' }}>
+          <div className="px-6 py-5 pb-28 space-y-5 flex-1">
+            {serverError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
+            )}
+            {serverSuccess && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-2 rounded-lg text-sm">{serverSuccess}</div>
+            )}
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Items</span>
-              <span className="font-medium">{cartPreview.length}</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Items</span>
+                <span className="font-medium">{cartPreview.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">Total</span>
+                <span className="font-bold">₹{cartSubtotal.toLocaleString()}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Total</span>
-              <span className="font-bold">₹{cartSubtotal.toLocaleString()}</span>
-            </div>
-          </div>
 
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Your Details</h3>
@@ -206,11 +207,15 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
             />
           </div>
 
-          <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
-            <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70">
-              {submitting ? 'Submitting...' : 'Place Order'}
-            </button>
+          </div>
+
+          <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-gray-200 bg-white shadow-[0_-1px_8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
+              <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
+                {submitting ? 'Submitting...' : 'Place Order'}
+              </button>
+            </div>
           </div>
         </form>
       </div>

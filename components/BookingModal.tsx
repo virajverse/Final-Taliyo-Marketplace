@@ -255,7 +255,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
   const cartSubtotal = cartPreview.reduce((sum, it) => sum + ((Number((it as any)?.price_min) || 0) * ((it as any)?.quantity || 1)), 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start md:items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 z-[70] flex items-start md:items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl md:max-w-3xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <div>
@@ -270,7 +270,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto no-scrollbar" style={{ maxHeight: '85dvh' }}>
-          <div className="px-6 py-5 space-y-6 flex-1">
+          <div className="px-6 py-5 pb-28 space-y-6 flex-1">
             {serverError && (
               <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-2 rounded-lg text-sm">{serverError}</div>
             )}
@@ -443,7 +443,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
             </div>
           </div>
 
-          <div className="sticky bottom-0 px-6 py-4 border-t border-gray-200 bg-white" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-gray-200 bg-white shadow-[0_-1px_8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
               <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
