@@ -2,12 +2,17 @@
 -- Run in Supabase SQL editor after schema.sql
 
 -- Categories
-insert into categories (id, name, description, icon, slug, is_active, sort_order)
+insert into categories (name, description, icon, slug, is_active, sort_order)
 values
-  ('11111111-1111-1111-1111-111111111111','Web Development','Professional web development services','web','web-development',true,1),
-  ('22222222-2222-2222-2222-222222222222','Mobile Development','iOS/Android and cross-platform apps','mobile','mobile-development',true,2),
-  ('33333333-3333-3333-3333-333333333333','Digital Marketing','SEO, SMM and PPC','marketing','digital-marketing',true,3)
-on conflict (slug) do nothing;
+  ('Web Development','Professional web development services','web','web-development',true,1),
+  ('Mobile Development','iOS/Android and cross-platform apps','mobile','mobile-development',true,2),
+  ('Digital Marketing','SEO, SMM and PPC','marketing','digital-marketing',true,3)
+on conflict (slug) do update set
+  name = excluded.name,
+  description = excluded.description,
+  icon = excluded.icon,
+  is_active = excluded.is_active,
+  sort_order = excluded.sort_order;
 
 -- Services (one sample)
 insert into services (
@@ -16,7 +21,7 @@ insert into services (
   rating_average, rating_count, is_active, is_featured, slug
 ) values (
   'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  '11111111-1111-1111-1111-111111111111',
+  (select id from categories where slug = 'web-development'),
   'Professional Web Development',
   'Responsive, fast and SEO-friendly websites',
   5000, 15000, 'fixed', 'Delhi NCR',
@@ -26,7 +31,23 @@ insert into services (
   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
   true,
   4.8, 100, true, true, 'professional-web-development'
-) on conflict (slug) do nothing;
+) on conflict (slug) do update set
+  category_id = excluded.category_id,
+  title = excluded.title,
+  description = excluded.description,
+  price_min = excluded.price_min,
+  price_max = excluded.price_max,
+  price_type = excluded.price_type,
+  location = excluded.location,
+  is_remote = excluded.is_remote,
+  images = excluded.images,
+  provider_name = excluded.provider_name,
+  provider_avatar = excluded.provider_avatar,
+  provider_verified = excluded.provider_verified,
+  rating_average = excluded.rating_average,
+  rating_count = excluded.rating_count,
+  is_active = excluded.is_active,
+  is_featured = excluded.is_featured;
 
 -- Banners
 insert into banners (image_url, cta_text, cta_url, cta_align, target, active, sort_order, overlay_opacity)

@@ -45,7 +45,22 @@ export async function POST(request: NextRequest) {
     // Accept non-UUID serviceId by coercing to null (e.g., cart orders)
     const rawServiceId = (formData.get('serviceId') as string) || '';
     const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-    const service_id = uuidRegex.test(rawServiceId) ? rawServiceId : null;
+    let service_id: string | null = uuidRegex.test(rawServiceId) ? rawServiceId : null;
+    // If a UUID is provided but service doesn't exist, coerce to null to avoid FK failure
+    if (service_id) {
+      try {
+        const { data: svc, error: svcErr } = await supabase
+          .from('services')
+          .select('id')
+          .eq('id', service_id)
+          .single();
+        if (svcErr || !svc) {
+          service_id = null;
+        }
+      } catch {
+        service_id = null;
+      }
+    }
     const bookingData = {
       service_id,
       service_title: formData.get('serviceTitle') as string,
