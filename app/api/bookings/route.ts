@@ -15,6 +15,21 @@ const supabase = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null;
 
+// Ensure storage bucket exists (idempotent)
+async function ensureBucket(bucketName: string) {
+  if (!supabase) return;
+  try {
+    const { data } = await (supabase as any).storage.getBucket(bucketName);
+    if (!data) {
+      await (supabase as any).storage.createBucket(bucketName, { public: false, fileSizeLimit: 10 * 1024 * 1024 });
+    }
+  } catch {
+    try {
+      await (supabase as any).storage.createBucket(bucketName, { public: false, fileSizeLimit: 10 * 1024 * 1024 });
+    } catch {}
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Check if Supabase is configured
@@ -55,6 +70,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Handle file uploads
+    await ensureBucket('booking-files');
     const files = [];
     let fileIndex = 0;
     while (formData.get(`file_${fileIndex}`)) {
