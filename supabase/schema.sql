@@ -85,6 +85,12 @@ create table if not exists banners (
   created_at timestamptz not null default now()
 );
 
+alter table banners
+  add column if not exists target banner_target default 'all';
+
+alter table banners
+  add column if not exists overlay_opacity numeric;
+
 create index if not exists idx_banners_active on banners(active);
 create index if not exists idx_banners_sort on banners(sort_order);
 
