@@ -69,6 +69,11 @@ export default function PWAInstallBridge() {
   };
 
   const onCancel = () => setShowOverlay(false);
+  const onCancelWrapped = () => {
+    const parentOrigin = parentOriginRef.current || '*';
+    try { window.parent?.postMessage({ type: 'pwa-install-result', status: 'dismissed' }, parentOrigin); } catch {}
+    setShowOverlay(false);
+  };
 
   return showOverlay ? (
     <div style={{ position: 'fixed', inset: 0 as any, background: 'rgba(0,0,0,0.45)', display: 'grid', placeItems: 'center', zIndex: 9999 }}>
@@ -76,7 +81,7 @@ export default function PWAInstallBridge() {
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Install app</h3>
         <p style={{ margin: 0, fontSize: 13, opacity: 0.85, marginBottom: 14 }}>Add Taliyo Marketplace to your home screen for a full-screen experience.</p>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onCancel} style={{ padding: '8px 12px', borderRadius: 8, background: '#374151', color: '#E5E7EB', border: 'none' }}>Cancel</button>
+          <button onClick={onCancelWrapped} style={{ padding: '8px 12px', borderRadius: 8, background: '#374151', color: '#E5E7EB', border: 'none' }}>Cancel</button>
           <button onClick={onConfirmInstall} style={{ padding: '8px 12px', borderRadius: 8, background: '#2563EB', color: 'white', border: 'none' }}>Install</button>
         </div>
       </div>

@@ -10,6 +10,7 @@ node_modules/
 
 # Admin Panel (separate repository)
 admin-panel/
+frontend/
 
 # Environment variables
 .env
