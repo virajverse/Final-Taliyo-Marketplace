@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     const [eventsRes, installsRes] = await Promise.all([
       supabaseAdmin
         .from('pwa_install_events')
-        .select('device_id, utm_source, utm_medium, utm_campaign, ref, created_at')
+        .select('*')
         .gte('created_at', from)
         .lte('created_at', to)
         .order('created_at', { ascending: true })
