@@ -201,7 +201,7 @@ export default function PWAInstallBridge() {
 
       {!isStandaloneMode && !showIOSBar && (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 96, zIndex: 100000, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
-          <button aria-label="Install app" onClick={installNow} style={{ padding: '10px 18px', borderRadius: 9999, background: '#2563EB', color: 'white', border: 'none', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 24px rgba(37,99,235,0.4)' }}>
+          <button aria-label="Install app" disabled={!canInstall} onClick={installNow} style={{ padding: '10px 18px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 10px 24px rgba(37,99,235,0.4)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
               <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               <path d="M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
