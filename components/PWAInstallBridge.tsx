@@ -147,21 +147,23 @@ export default function PWAInstallBridge() {
     <>
       {showBar && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', padding: 8 }}>
-          <div style={{ width: 'min(560px, 96%)', borderRadius: 14, padding: 12, background: 'rgba(17,24,39,0.96)', color: '#F9FAFB', border: '1px solid rgba(59,130,246,0.25)', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ width: 'min(560px, 96%)', borderRadius: 14, padding: 12, background: 'rgba(17,24,39,0.96)', color: '#F9FAFB', border: '1px solid rgba(59,130,246,0.25)', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <img src="/icons/icon-192.png" alt="App" width={32} height={32} style={{ width: 32, height: 32, borderRadius: 8 }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 800 }}>Install Taliyo Marketplace</div>
-              <div style={{ fontSize: 12.5, opacity: 0.8 }}>Add to your home screen for a full‑screen experience.</div>
+            <div style={{ flex: '1 1 100%', minWidth: 0, textAlign: 'left' }}>
+              <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.15 }}>Install Taliyo Marketplace</div>
+              <div style={{ fontSize: 12.5, opacity: 0.8, marginTop: 4 }}>Add to your home screen for a full‑screen experience.</div>
             </div>
-            <button onClick={() => setShowBar(false)} style={{ padding: '8px 12px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600, marginRight: 6 }}>Not now</button>
-            <button disabled={!canInstall} onClick={installNow} style={{ padding: '8px 16px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
-                <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-              Install
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 100%', justifyContent: 'flex-end', marginTop: 8 }}>
+              <button onClick={() => setShowBar(false)} style={{ padding: '8px 12px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600 }}>Not now</button>
+              <button aria-label="Install app" disabled={!canInstall} onClick={installNow} style={{ padding: '8px 16px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+                  <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Install
+              </button>
+            </div>
           </div>
         </div>
       )}
