@@ -3,6 +3,9 @@ export async function GET() {
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 // add push/notification handlers as needed
+self.addEventListener('fetch', (event) => {
+  // Minimal fetch handler to satisfy installability; let network handle normally
+});
 `;
   return new Response(js.trim(), {
     headers: {

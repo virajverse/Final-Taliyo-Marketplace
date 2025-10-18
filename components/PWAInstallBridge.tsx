@@ -34,6 +34,14 @@ export default function PWAInstallBridge() {
     const onBIP = (e: any) => {
       try { e.preventDefault(); } catch {}
       dpRef.current = e;
+      // If opened top-level with ?install=1, attempt prompt immediately
+      try {
+        const isTopLevel = window.top === window.self;
+        const sp = new URLSearchParams(window.location.search);
+        if (isTopLevel && sp.get('install') === '1' && dpRef.current?.prompt) {
+          dpRef.current.prompt();
+        }
+      } catch {}
     };
     const onInstalled = () => {
       const parentOrigin = parentOriginRef.current || '*';
