@@ -35,7 +35,12 @@ export default function PWAInstallBridge() {
       try { e.preventDefault(); } catch {}
       dpRef.current = e;
     };
+    const onInstalled = () => {
+      const parentOrigin = parentOriginRef.current || '*';
+      try { window.parent?.postMessage({ type: 'pwa-appinstalled' }, parentOrigin); } catch {}
+    };
     window.addEventListener('beforeinstallprompt', onBIP);
+    window.addEventListener('appinstalled', onInstalled);
     return () => window.removeEventListener('beforeinstallprompt', onBIP);
   }, []);
 
