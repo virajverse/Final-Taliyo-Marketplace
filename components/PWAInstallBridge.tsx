@@ -72,7 +72,13 @@ export default function PWAInstallBridge() {
     const parentOrigin = parentOriginRef.current || '*';
     setShowOverlay(false);
     if (!dp?.prompt) {
-      try { window.parent?.postMessage({ type: 'pwa-install-result', status: 'unavailable' }, parentOrigin); } catch {}
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('install', '1');
+        window.parent?.postMessage({ type: 'taliyo-open-top-level', url: url.toString() }, parentOrigin);
+      } catch {
+        try { window.parent?.postMessage({ type: 'pwa-install-result', status: 'unavailable' }, parentOrigin); } catch {}
+      }
       return;
     }
     try {
@@ -95,13 +101,18 @@ export default function PWAInstallBridge() {
   };
 
   return showOverlay ? (
-    <div style={{ position: 'fixed', inset: 0 as any, background: 'rgba(0,0,0,0.45)', display: 'grid', placeItems: 'center', zIndex: 9999 }}>
-      <div style={{ width: 320, borderRadius: 12, padding: 16, background: '#111827', color: '#F9FAFB', border: '1px solid #1F2937', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
-        <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Install app</h3>
-        <p style={{ margin: 0, fontSize: 13, opacity: 0.85, marginBottom: 14 }}>Add Taliyo Marketplace to your home screen for a full-screen experience.</p>
+    <div style={{ position: 'fixed', inset: 0 as any, background: 'rgba(10,11,15,0.55)', backdropFilter: 'blur(2px)', display: 'grid', placeItems: 'center', zIndex: 9999 }}>
+      <div style={{ width: 340, borderRadius: 16, padding: 16, background: 'rgba(17,24,39,0.96)', color: '#F9FAFB', border: '1px solid rgba(59,130,246,0.25)', boxShadow: '0 12px 40px rgba(0,0,0,0.45)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <img src="/icons/icon-192.png" alt="App" width={36} height={36} style={{ width: 36, height: 36, borderRadius: 8 }} />
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: 0.2 }}>Install Taliyo Marketplace</div>
+            <div style={{ fontSize: 12.5, opacity: 0.8 }}>Add to your home screen for a full‑screen, faster experience.</div>
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={onCancelWrapped} style={{ padding: '8px 12px', borderRadius: 8, background: '#374151', color: '#E5E7EB', border: 'none' }}>Cancel</button>
-          <button onClick={onConfirmInstall} style={{ padding: '8px 12px', borderRadius: 8, background: '#2563EB', color: 'white', border: 'none' }}>Install</button>
+          <button onClick={onCancelWrapped} style={{ padding: '10px 14px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600 }}>Not now</button>
+          <button onClick={onConfirmInstall} style={{ padding: '10px 14px', borderRadius: 10, background: 'linear-gradient(90deg,#2563EB,#3B82F6)', color: 'white', border: 'none', fontWeight: 700, boxShadow: '0 8px 20px rgba(37,99,235,0.35)' }}>Install</button>
         </div>
       </div>
     </div>
