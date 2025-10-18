@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 interface OrderProceedModalProps {
   isOpen: boolean;
@@ -100,7 +101,13 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
         if (cart) fd.append('cartItems', cart);
       } catch {}
 
-      const res = await fetch('/api/bookings', { method: 'POST', body: fd });
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: fd
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to submit order');
       setServerSuccess('Order submitted successfully!');

@@ -50,22 +50,30 @@ export default function Reviews() {
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      // Fetch user's bookings by phone/email (same approach as Orders)
-      let qb = supabase
-        .from('bookings')
-        .select('id')
-        .order('created_at', { ascending: false });
-
-      const phone = storedPhone?.trim();
-      const email = userEmail?.trim();
-      if (phone) {
-        const digits = phone.replace(/\D/g, '');
-        qb = qb.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
-      } else if (email) {
-        qb = qb.or(`email.eq.${email},customer_email.eq.${email}`);
+      // Prefer user_id when available; fallback to email
+      let bookingRows: any[] | null = null;
+      if (user?.id) {
+        const { data } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        bookingRows = data || [];
+      } else {
+        const email = userEmail?.trim();
+        if (!email) {
+          setReviews([]);
+          setLoading(false);
+          return;
+        }
+        const { data } = await supabase
+          .from('bookings')
+          .select('id')
+          .or(`email.eq.${email},customer_email.eq.${email}`)
+          .order('created_at', { ascending: false });
+        bookingRows = data || [];
       }
 
-      const { data: bookingRows } = await qb;
       const ids = (bookingRows || []).map(b => b.id);
       if (ids.length === 0) {
         setReviews([]);

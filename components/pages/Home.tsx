@@ -52,9 +52,14 @@ export default function Home() {
   const [popularCategories, setPopularCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  
+  const { user, isLoggedIn, redirectToLogin } = useAuth();
   
   const handleWhatsAppClick = () => {
-    window.open('https://wa.me/+917042523611', '_blank');
+    const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+    window.open(`https://wa.me/${supportWhatsapp}`, '_blank');
   };
 
   useEffect(() => {
@@ -82,6 +87,24 @@ export default function Home() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) { setWishlistIds(new Set()); return; }
+      const { data } = await supabase
+        .from('wishlists')
+        .select('service_id')
+        .eq('user_id', user.id);
+      setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
+    };
+    load();
+    if (!user?.id) return;
+    const ch = supabase
+      .channel('home_wishlist_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
 
   const fetchData = async () => {
     try {
@@ -112,8 +135,17 @@ export default function Home() {
     }
   };
 
-  const handleToggleWishlist = (serviceId: string) => {
-    console.log('Toggled wishlist for service:', serviceId);
+  const handleToggleWishlist = async (serviceId: string) => {
+    if (!user?.id) { redirectToLogin(); return; }
+    try {
+      if (wishlistIds.has(serviceId)) {
+        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
+        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+      } else {
+        await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
+        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+      }
+    } catch {}
   };
 
   const getIconName = (iconName: string) => {
@@ -125,9 +157,6 @@ export default function Home() {
     };
     return iconMap[iconName] || 'package';
   };
-
-  const { isLoggedIn, redirectToLogin } = useAuth();
-
   const handleWhatsAppSupport = () => {
     if (!isLoggedIn) {
       redirectToLogin();
@@ -135,8 +164,9 @@ export default function Home() {
     }
     
     const message = `Hi! I need help with Taliyo services.`;
-    const phoneNumber = '+917042523611';
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+    const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -247,6 +277,7 @@ export default function Home() {
                   key={service.id}
                   service={service}
                   onToggleWishlist={handleToggleWishlist}
+                  isInWishlist={wishlistIds.has(service.id)}
                   onAddedToCart={(count) => setCartCount(count)}
                 />
               ))}

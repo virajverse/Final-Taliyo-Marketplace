@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface BookingRow {
   id: string;
@@ -16,6 +17,7 @@ interface BookingRow {
   updated_at?: string;
   cart_items?: string | null;
   additional_notes?: string | null;
+  files?: any;
 }
 
 export default function OrderStatusPage() {
@@ -23,6 +25,8 @@ export default function OrderStatusPage() {
   const router = useRouter();
   const [booking, setBooking] = useState<BookingRow | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user: authUser } = useAuth();
+  const userEmail = authUser?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
 
   // 7-step timeline
   const steps = [
@@ -41,11 +45,39 @@ export default function OrderStatusPage() {
     const load = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('*')
-          .eq('id', params.id as string)
-          .single();
+        const uid = authUser?.id || '';
+        if (!uid && !userEmail) {
+          router.push('/login');
+          return;
+        }
+        let data: any = null; let error: any = null;
+        if (uid) {
+          const { data: row, error: err } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', params.id as string)
+            .eq('user_id', uid)
+            .single();
+          data = row; error = err;
+          // If not found via user_id (legacy row), fallback to email
+          if ((error || !data) && userEmail) {
+            const { data: row2, error: err2 } = await supabase
+              .from('bookings')
+              .select('*')
+              .eq('id', params.id as string)
+              .or(`email.eq.${userEmail},customer_email.eq.${userEmail}`)
+              .single();
+            data = row2; error = err2;
+          }
+        } else {
+          const { data: row, error: err } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('id', params.id as string)
+            .or(`email.eq.${userEmail},customer_email.eq.${userEmail}`)
+            .single();
+          data = row; error = err;
+        }
         if (error) throw error;
         if (!mounted) return;
         setBooking(data as unknown as BookingRow);
@@ -66,7 +98,7 @@ export default function OrderStatusPage() {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [params?.id]);
+  }, [params?.id, userEmail]);
 
   const timeline = useMemo(() => {
     try {
@@ -76,6 +108,30 @@ export default function OrderStatusPage() {
       return [];
     }
   }, [booking?.additional_notes]);
+
+  const attachments = useMemo(() => {
+    try {
+      const f = (booking as any)?.files;
+      return Array.isArray(f)
+        ? f.filter((x: any) => x && typeof x.path === 'string').map((x: any) => ({ name: x.name || x.path, path: x.path }))
+        : [];
+    } catch { return []; }
+  }, [booking]);
+
+  const downloadAttachment = async (path: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token || !booking?.id) return;
+      const res = await fetch('/api/storage/sign-url', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bookingId: booking.id, path, expiresIn: 900 })
+      });
+      const j = await res.json();
+      if (res.ok && j?.url) window.open(j.url, '_blank');
+    } catch {}
+  };
 
   const cartItems = useMemo(() => {
     try {
@@ -200,6 +256,20 @@ export default function OrderStatusPage() {
             </div>
           )}
         </div>
+
+        {attachments.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4">
+            <h3 className="font-semibold text-gray-900 mb-3">Attachments</h3>
+            <div className="space-y-2 text-sm">
+              {attachments.map((f: any, idx: number) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div className="truncate pr-2">{f.name}</div>
+                  <button onClick={() => downloadAttachment(f.path)} className="text-blue-600 hover:underline">Download</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Items */}
         <div className="bg-white border border-gray-200 rounded-2xl p-4 mb-4">

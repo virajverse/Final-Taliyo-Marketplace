@@ -7,6 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
 import { Search, Filter, SlidersHorizontal, X } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Service {
   id: string;
@@ -45,6 +46,8 @@ function SearchResultsContent() {
     serviceType: 'all',
     rating: 'all'
   });
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const { user, redirectToLogin } = useAuth();
 
   useEffect(() => {
     searchServices(query);
@@ -57,6 +60,24 @@ function SearchResultsContent() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [searchQuery, query]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) { setWishlistIds(new Set()); return; }
+      const { data } = await supabase
+        .from('wishlists')
+        .select('service_id')
+        .eq('user_id', user.id);
+      setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
+    };
+    load();
+    if (!user?.id) return;
+    const ch = supabase
+      .channel('search_wishlist_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
 
   const searchServices = async (searchTerm: string) => {
     setLoading(true);
@@ -88,8 +109,17 @@ function SearchResultsContent() {
     }
   };
 
-  const handleToggleWishlist = (serviceId: string) => {
-    console.log('Toggled wishlist for service:', serviceId);
+  const handleToggleWishlist = async (serviceId: string) => {
+    if (!user?.id) { redirectToLogin(); return; }
+    try {
+      if (wishlistIds.has(serviceId)) {
+        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
+        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+      } else {
+        await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
+        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+      }
+    } catch {}
   };
 
   const applyFilters = () => {
@@ -258,6 +288,7 @@ function SearchResultsContent() {
                 key={service.id}
                 service={service}
                 onToggleWishlist={handleToggleWishlist}
+                isInWishlist={wishlistIds.has(service.id)}
               />
             ))}
           </div>

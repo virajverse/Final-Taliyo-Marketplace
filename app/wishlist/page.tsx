@@ -205,9 +205,9 @@ export default function Wishlist() {
                 const message = `Hi! I'm interested in these services from my wishlist:\n\n${wishlistItems.map(item => 
                   `Service: ${item.title}\nPrice: ₹${item.price_min?.toLocaleString()} - ₹${item.price_max?.toLocaleString()}\nProvider: ${item.provider_name}\n`
                 ).join('\n')}\nPlease provide more details and quotes.`;
-                
-                const phoneNumber = '+917042523611';
-                const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+                if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+                const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
               }}
               className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2 mx-auto"

@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-const adminWhatsappNumber = '+917042523611'; // व्हाट्सएप नंबर जिस पर बुकिंग की जानकारी भेजी जाएगी
+const adminWhatsappNumber = process.env.ADMIN_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '';
 
 // Check if Supabase is configured
 if (!supabaseUrl || !supabaseServiceKey) {
@@ -15,6 +15,25 @@ const supabase = supabaseUrl && supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey)
   : null;
 
+// Basic in-memory rate limiting (per IP): 5 requests / 10 minutes
+const rlWindowMs = 10 * 60 * 1000;
+const rlMax = 5;
+const rlMap = new Map<string, number[]>();
+
+function getClientIp(req: NextRequest): string {
+  const fwd = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  return fwd || (req.headers.get('x-real-ip') || '') || 'unknown';
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const arr = rlMap.get(ip) || [];
+  const filtered = arr.filter(ts => now - ts < rlWindowMs);
+  filtered.push(now);
+  rlMap.set(ip, filtered);
+  return filtered.length > rlMax;
+}
+
 // Ensure storage bucket exists (idempotent)
 async function ensureBucket(bucketName: string) {
   if (!supabase) return;
@@ -22,6 +41,8 @@ async function ensureBucket(bucketName: string) {
     const { data } = await (supabase as any).storage.getBucket(bucketName);
     if (!data) {
       await (supabase as any).storage.createBucket(bucketName, { public: false, fileSizeLimit: 10 * 1024 * 1024 });
+    } else if ((data as any)?.public === true) {
+      try { await (supabase as any).storage.updateBucket(bucketName, { public: false }); } catch {}
     }
   } catch {
     try {
@@ -39,7 +60,24 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
+    // Rate limiting
+    const ip = getClientIp(request);
+    if (isRateLimited(ip)) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429 }
+      );
+    }
     const formData = await request.formData();
+    let authUserId: string | null = null;
+    try {
+      const authHeader = request.headers.get('authorization') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+      if (token) {
+        const { data: ures } = await (supabase as any).auth.getUser(token);
+        authUserId = ures?.user?.id || null;
+      }
+    } catch {}
     
     // Extract form fields
     // Accept non-UUID serviceId by coercing to null (e.g., cart orders)
@@ -76,6 +114,7 @@ export async function POST(request: NextRequest) {
       additional_notes: formData.get('additionalNotes') as string || null,
       cart_items: formData.get('cartItems') as string || null,
       status: 'pending',
+      user_id: authUserId,
       // Also populate legacy fields for compatibility
       customer_name: formData.get('fullName') as string,
       customer_phone: formData.get('phone') as string,
@@ -88,9 +127,28 @@ export async function POST(request: NextRequest) {
     await ensureBucket('booking-files');
     const files = [];
     let fileIndex = 0;
+    const allowedTypes = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/svg+xml',
+      'application/pdf',
+      'text/plain',
+    ]);
     while (formData.get(`file_${fileIndex}`)) {
       const file = formData.get(`file_${fileIndex}`) as File;
       if (file && file.size > 0) {
+        // Server-side MIME allowlist
+        if (file.type && !allowedTypes.has(file.type)) {
+          files.push({
+            name: file.name,
+            path: null,
+            size: file.size,
+            type: file.type,
+            error: 'Unsupported file type'
+          });
+          fileIndex++;
+          continue;
+        }
         try {
           // Upload file to Supabase Storage
           const fileName = `${Date.now()}_${file.name}`;
@@ -151,7 +209,9 @@ export async function POST(request: NextRequest) {
 
     // WhatsApp notification URL for admin
     const adminMessage = `नई बुकिंग प्राप्त हुई है!\n\nसेवा: ${bookingData.service_title}\nग्राहक: ${bookingData.full_name}\nफोन: ${bookingData.phone}\nईमेल: ${bookingData.email || 'N/A'}\nआवश्यकताएँ: ${bookingData.requirements}\n\nकृपया जल्द से जल्द संपर्क करें।`;
-    const adminWhatsappUrl = `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(adminMessage)}`;
+    const adminWhatsappUrl = adminWhatsappNumber
+      ? `https://wa.me/${adminWhatsappNumber}?text=${encodeURIComponent(adminMessage)}`
+      : null;
 
     return NextResponse.json(
       { 
@@ -162,56 +222,6 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
-
-  } catch (error) {
-    console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function GET(request: NextRequest) {
-  try {
-    // Check if Supabase is configured
-    if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not configured' },
-        { status: 503 }
-      );
-    }
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const status = searchParams.get('status');
-    
-    let query = supabase
-      .from('bookings')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (status) {
-      query = query.eq('status', status);
-    }
-
-    const { data, error, count } = await query
-      .range((page - 1) * limit, page * limit - 1);
-
-    if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch bookings' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      bookings: data,
-      total: count,
-      page,
-      limit
-    });
 
   } catch (error) {
     console.error('API error:', error);

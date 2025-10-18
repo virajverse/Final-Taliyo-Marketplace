@@ -49,6 +49,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(uBase);
         setIsLoggedIn(true);
         setAuthLoading(false);
+        if (typeof document !== 'undefined') {
+          try { document.cookie = 'taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax'; } catch {}
+        }
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
@@ -87,6 +90,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setIsLoggedIn(false);
         setAuthLoading(false);
+        if (typeof document !== 'undefined') {
+          try { document.cookie = 'taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax'; } catch {}
+        }
       }
     };
     init();
@@ -102,6 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(uBase);
         setIsLoggedIn(true);
         setAuthLoading(true);
+        if (typeof document !== 'undefined') {
+          try { document.cookie = 'taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax'; } catch {}
+        }
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }

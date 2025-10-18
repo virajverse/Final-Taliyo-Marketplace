@@ -59,31 +59,42 @@ export default function Orders() {
   }, [userEmail, storedPhone]);
 
   useEffect(() => {
+    const uid = user?.id || '';
+    if (!uid && !userEmail) return;
     const channel = supabase
       .channel('orders_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, () => fetchBookings())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: uid ? `user_id=eq.${uid}` : undefined as any }, () => fetchBookings())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [userEmail, storedPhone]);
+  }, [user?.id, userEmail, storedPhone]);
 
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      let q = supabase
-        .from('bookings')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      const phone = storedPhone?.trim();
-      const email = userEmail?.trim();
-      if (phone) {
-        const digits = phone.replace(/\D/g, '');
-        q = q.or(`phone.ilike.%${digits}%,customer_phone.ilike.%${digits}%`);
-      } else if (email) {
-        q = q.or(`email.eq.${email},customer_email.eq.${email}`);
+      const uid = user?.id || '';
+      let data: any[] | null = null;
+      if (uid) {
+        const { data: byUser } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('user_id', uid)
+          .order('created_at', { ascending: false });
+        data = byUser || [];
+      } else {
+        const email = userEmail?.trim();
+        if (!email) {
+          setBookings([]);
+          setLoading(false);
+          return;
+        }
+        const { data: byEmail } = await supabase
+          .from('bookings')
+          .select('*')
+          .or(`email.eq.${email},customer_email.eq.${email}`)
+          .order('created_at', { ascending: false });
+        data = byEmail || [];
       }
-
-      const { data } = await q;
+      
       setBookings(data || []);
     } catch (e) {
       console.error('Failed to load bookings', e);

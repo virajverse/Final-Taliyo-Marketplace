@@ -191,6 +191,10 @@ alter table profiles enable row level security;
 alter table order_clicks enable row level security;
 alter table analytics enable row level security;
 alter table banners enable row level security;
+alter table bookings enable row level security;
+alter table wishlists enable row level security;
+alter table reviews enable row level security;
+alter table notifications enable row level security;
 
 -- Policies (idempotent via checks)
 -- Public read of services
@@ -244,6 +248,102 @@ end $$;
 do $$ begin
   if not exists (select 1 from pg_policies where tablename='profiles' and policyname='profiles_update_own') then
     create policy profiles_update_own on profiles for update using (id = auth.uid());
+  end if;
+end $$;
+
+-- Bookings: users can read their own rows by email; admins should use service role
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='bookings' and policyname='bookings_select_by_email') then
+    create policy bookings_select_by_email on bookings for select
+      using (
+        auth.email() is not null and (
+          coalesce(email, '') = auth.email() or coalesce(customer_email, '') = auth.email()
+        )
+      );
+  end if;
+end $$;
+
+-- Add user_id to bookings for stronger ownership (idempotent)
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'bookings' and column_name = 'user_id'
+  ) then
+    alter table bookings add column user_id uuid references auth.users(id);
+  end if;
+end $$;
+
+-- Bookings: users can read their own rows by user_id
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='bookings' and policyname='bookings_select_by_user') then
+    create policy bookings_select_by_user on bookings for select using (user_id = auth.uid());
+  end if;
+end $$;
+
+-- Wishlists: strict per-user access
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='wishlists' and policyname='wishlists_select_own') then
+    create policy wishlists_select_own on wishlists for select using (user_id = auth.uid());
+  end if;
+end $$;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='wishlists' and policyname='wishlists_insert_own') then
+    create policy wishlists_insert_own on wishlists for insert with check (user_id = auth.uid());
+  end if;
+end $$;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='wishlists' and policyname='wishlists_update_own') then
+    create policy wishlists_update_own on wishlists for update using (user_id = auth.uid());
+  end if;
+end $$;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='wishlists' and policyname='wishlists_delete_own') then
+    create policy wishlists_delete_own on wishlists for delete using (user_id = auth.uid());
+  end if;
+end $$;
+
+-- Reviews: public can read approved reviews
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='reviews' and policyname='reviews_select_public_approved') then
+    create policy reviews_select_public_approved on reviews for select using (is_approved = true);
+  end if;
+end $$;
+
+-- Notifications: add user_id for per-user notifications (idempotent)
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'notifications' and column_name = 'user_id'
+  ) then
+    alter table notifications add column user_id uuid references auth.users(id);
+  end if;
+end $$;
+
+-- Replace public policy to only allow rows where user_id is null (global notifications)
+do $$ declare
+  pol_exists boolean;
+begin
+  select exists(select 1 from pg_policies where tablename='notifications' and policyname='notifications_select_public') into pol_exists;
+  if pol_exists then
+    execute 'drop policy notifications_select_public on notifications';
+  end if;
+end $$;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='notifications' and policyname='notifications_select_public') then
+    create policy notifications_select_public on notifications for select using (user_id is null);
+  end if;
+end $$;
+-- Per-user notifications
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='notifications' and policyname='notifications_select_own') then
+    create policy notifications_select_own on notifications for select using (user_id = auth.uid());
+  end if;
+end $$;
+
+-- Allow users to update their own notifications (e.g., mark as read)
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='notifications' and policyname='notifications_update_own') then
+    create policy notifications_update_own on notifications for update using (user_id = auth.uid()) with check (user_id = auth.uid());
   end if;
 end $$;
 

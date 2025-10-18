@@ -63,11 +63,23 @@ export default function BannerSlider() {
           });
           setBanners(scheduled as any);
         }
-        else setBanners([
-          { id: 'default-1', image_url: '', cta_text: '+91 7042523611', cta_url: 'https://wa.me/+917042523611', cta_align: 'center' }
-        ]);
+        else {
+          const w = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+          if (w) {
+            setBanners([
+              { id: 'default-1', image_url: '', cta_text: `+91 ${w}`, cta_url: `https://wa.me/${w}`, cta_align: 'center' }
+            ]);
+          } else {
+            setBanners([{ id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' }]);
+          }
+        }
       } catch {
-        setBanners([{ id: 'default-1', image_url: '', cta_text: '+91 7042523611', cta_url: 'https://wa.me/+917042523611', cta_align: 'center' }]);
+        const w = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+        if (w) {
+          setBanners([{ id: 'default-1', image_url: '', cta_text: `+91 ${w}`, cta_url: `https://wa.me/${w}`, cta_align: 'center' }]);
+        } else {
+          setBanners([{ id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' }]);
+        }
       }
     })();
     return () => {

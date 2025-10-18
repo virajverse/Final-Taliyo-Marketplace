@@ -84,18 +84,16 @@ export default function Profile() {
 
     // Stats
     const email = authUser.email || '';
-    const storedPhone = (p?.phone || '').replace(/\D/g, '');
     // Bookings count
     let bookingsCount = 0;
     try {
       let qb = supabase
         .from('bookings')
         .select('id', { count: 'exact', head: true });
-      if (storedPhone) {
-        qb = qb.or(`customer_phone.ilike.%${storedPhone}%,phone.ilike.%${storedPhone}%`);
-      }
       if (email) {
         qb = qb.or(`customer_email.eq.${email},email.eq.${email}`);
+      } else {
+        throw new Error('no_email');
       }
       const { count: bcount } = await qb;
       bookingsCount = bcount || 0;
@@ -117,6 +115,7 @@ export default function Profile() {
       const { data: bIds } = await supabase
         .from('bookings')
         .select('id')
+        .or(`customer_email.eq.${email},email.eq.${email}`)
         .order('created_at', { ascending: false })
         .limit(1000);
       const ids = (bIds || []).map(b => b.id);

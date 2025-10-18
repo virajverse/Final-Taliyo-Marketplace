@@ -91,8 +91,9 @@ export default function Help() {
       color: 'bg-green-500',
       onClick: () => {
         const message = 'Hi! I need help with Taliyo services.';
-        const phoneNumber = '+917042523611';
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+        if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+        const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
         window.open(whatsappUrl, '_blank');
       }
     },
@@ -103,7 +104,9 @@ export default function Help() {
       action: 'Call Now',
       color: 'bg-blue-500',
       onClick: () => {
-        window.location.href = 'tel:+917042523611';
+        const supportPhone = process.env.NEXT_PUBLIC_SUPPORT_PHONE;
+        if (!supportPhone) { console.warn('Support phone not configured'); return; }
+        window.location.href = `tel:${supportPhone}`;
       }
     },
     {
@@ -256,8 +259,8 @@ export default function Help() {
           <button
             onClick={() => {
               const message = 'Hi! I need help with Taliyo services. I couldn\'t find the answer to my question in the FAQ.';
-              const phoneNumber = '+917042523611';
-              const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+              const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
+              const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
               window.open(whatsappUrl, '_blank');
             }}
             className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200 flex items-center gap-2 mx-auto"

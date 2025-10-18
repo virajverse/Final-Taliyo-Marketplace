@@ -22,7 +22,10 @@ export default function Notifications() {
 
   const fetchNotifications = async () => {
     try {
-      const res = await fetch('/api/notifications?limit=50')
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { setNotifications([]); return }
+      const res = await fetch('/api/notifications?limit=50', { headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error('failed')
       const json = await res.json()
       const rows: Notification[] = (json.notifications || []).map((n: any) => ({
@@ -63,12 +66,37 @@ export default function Notifications() {
         notification.id === id ? { ...notification, is_read: true } : notification
       )
     );
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token) return
+        await fetch('/api/notifications/mark-read', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ids: [id] })
+        })
+      } catch {}
+    })()
   };
 
   const markAllAsRead = () => {
+    const ids = notifications.map((n) => n.id)
     setNotifications((prev: Notification[]) =>
       prev.map((notification: Notification) => ({ ...notification, is_read: true }))
     );
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const token = session?.access_token
+        if (!token || ids.length === 0) return
+        await fetch('/api/notifications/mark-read', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ids })
+        })
+      } catch {}
+    })()
   };
 
   const getNotificationIcon = (type: string) => {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
   id: string;
@@ -229,8 +230,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       // files
       files.forEach((file, idx) => fd.append(`file_${idx}`, file));
 
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
       const res = await fetch('/api/bookings', {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: fd
       });
       const data = await res.json();

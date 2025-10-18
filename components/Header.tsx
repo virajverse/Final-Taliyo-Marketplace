@@ -133,8 +133,9 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                 <button
                   onClick={() => {
                     const message = `Hi! I need help with Taliyo services.`;
-                    const phoneNumber = '+917042523611';
-                    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+                    const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
+                    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+                    const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                     closeMenu();
                   }}

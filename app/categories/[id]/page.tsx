@@ -8,6 +8,7 @@ import ServiceCard from '@/components/ServiceCard';
 import { ArrowLeft, Package } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/lib/AuthContext';
 
 interface Service {
   id: string;
@@ -47,9 +48,11 @@ interface Category {
 export default function CategoryDetail() {
   const params = useParams();
   const router = useRouter();
+  const { user, redirectToLogin } = useAuth();
   const [category, setCategory] = useState<Category | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCategoryData();
@@ -63,6 +66,24 @@ export default function CategoryDetail() {
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [params.id]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user?.id) { setWishlistIds(new Set()); return; }
+      const { data } = await supabase
+        .from('wishlists')
+        .select('service_id')
+        .eq('user_id', user.id);
+      setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
+    };
+    load();
+    if (!user?.id) return;
+    const ch = supabase
+      .channel('category_wishlist_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
 
   const fetchCategoryData = async () => {
     try {
@@ -88,8 +109,17 @@ export default function CategoryDetail() {
     }
   };
 
-  const handleToggleWishlist = (serviceId: string) => {
-    console.log('Toggled wishlist for service:', serviceId);
+  const handleToggleWishlist = async (serviceId: string) => {
+    if (!user?.id) { redirectToLogin(); return; }
+    try {
+      if (wishlistIds.has(serviceId)) {
+        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
+        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+      } else {
+        await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
+        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+      }
+    } catch {}
   };
 
   const getIconName = (iconName?: string) => {
@@ -196,6 +226,7 @@ export default function CategoryDetail() {
                   key={service.id}
                   service={service}
                   onToggleWishlist={handleToggleWishlist}
+                  isInWishlist={wishlistIds.has(service.id)}
                 />
               ))}
             </div>
