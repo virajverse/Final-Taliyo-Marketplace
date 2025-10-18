@@ -145,12 +145,7 @@ export default function PWAInstallBridge() {
 
   const installNow = async () => {
     const dp = dpRef.current;
-    if (!dp?.prompt) {
-      // Fallback: show instructions when prompt isn't available yet
-      try { await logEvent('install_click_no_bip'); } catch {}
-      alert('Install not available yet. In Chrome, tap the menu (⋮) and choose "Add to Home screen".');
-      return;
-    }
+    if (!dp?.prompt) { try { await logEvent('install_click_no_bip'); } catch {}; return; }
     try {
       logEvent('prompted');
       dp.prompt();
@@ -166,7 +161,7 @@ export default function PWAInstallBridge() {
 
   return (
     <>
-      {showBar && (
+      {false && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', justifyContent: 'center', padding: 8, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
           <div style={{ width: 'min(560px, 96%)', borderRadius: 14, padding: 12, background: 'rgba(17,24,39,0.96)', color: '#F9FAFB', border: '1px solid rgba(59,130,246,0.25)', boxShadow: '0 12px 40px rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <img src="/icons/icon-192.png" alt="App" width={32} height={32} style={{ width: 32, height: 32, borderRadius: 8 }} />
@@ -205,7 +200,7 @@ export default function PWAInstallBridge() {
       )}
 
       {!isStandaloneMode && !showIOSBar && (
-        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: showBar ? 148 : 96, zIndex: 100000, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 96, zIndex: 100000, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px))' }}>
           <button aria-label="Install app" onClick={installNow} style={{ padding: '10px 18px', borderRadius: 9999, background: '#2563EB', color: 'white', border: 'none', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 10px 24px rgba(37,99,235,0.4)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
               <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
