@@ -1,11 +1,36 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function PWAInstallBridge() {
   const dpRef = useRef<any>(null);
   const [showBar, setShowBar] = useState(false);
   const [showIOSBar, setShowIOSBar] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
+
+  const getDeviceId = () => {
+    try {
+      const existing = localStorage.getItem('device_id');
+      if (existing && typeof existing === 'string') return existing;
+      const anyCrypto: any = (globalThis as any).crypto;
+      const generated: string = anyCrypto && anyCrypto.randomUUID ? anyCrypto.randomUUID() : Math.random().toString(36).slice(2);
+      try { localStorage.setItem('device_id', generated); } catch {}
+      return generated;
+    } catch {
+      return 'unknown';
+    }
+  };
+
+  const logInstall = async (source: string, event: string) => {
+    try {
+      const device_id = getDeviceId();
+      const ua = navigator.userAgent;
+      const platform = (navigator as any).platform || '';
+      const lang = navigator.language || '';
+      await supabase.from('pwa_installs').insert({ device_id, source, event, ua, platform, lang });
+    } catch {}
+  };
 
   // Optional: register SW (kept lightweight)
   useEffect(() => {
@@ -15,11 +40,26 @@ export default function PWAInstallBridge() {
     }
   }, []);
 
+  // Show the bar by default on top-level non-iPhone when not standalone, even if BIP hasn't fired yet
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isTop = window.top === window.self;
+    const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
+    const isIPhoneUA = /iphone/.test(ua);
+    const isIPhonePlat = /iPhone/.test((navigator as any).platform || '');
+    const isIPhone = isIPhoneUA || isIPhonePlat;
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
+    if (isTop && !isStandalone && !isIPhone) {
+      setShowBar(true);
+    }
+  }, []);
+
   // Capture the beforeinstallprompt, do NOT auto-prompt
   useEffect(() => {
     const onBIP = (e: any) => {
       try { e.preventDefault(); } catch {}
       dpRef.current = e;
+      setCanInstall(true);
       // If opened top-level with ?install=1, attempt prompt immediately
       try {
         const isTopLevel = window.top === window.self;
@@ -31,7 +71,8 @@ export default function PWAInstallBridge() {
       } catch {}
     };
     const onInstalled = () => {
-      try { setShowBar(false); } catch {}
+      try { setShowBar(false); setCanInstall(false); } catch {}
+      logInstall('bip', 'appinstalled');
     };
     window.addEventListener('beforeinstallprompt', onBIP);
     window.addEventListener('appinstalled', onInstalled);
@@ -45,22 +86,38 @@ export default function PWAInstallBridge() {
     if (typeof window === 'undefined') return;
     const isTop = window.top === window.self;
     const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-    const isIOS = /iphone|ipad|ipod/.test(ua);
+    const isIPhoneUA = /iphone/.test(ua);
+    const isIPhonePlat = /iPhone/.test((navigator as any).platform || '');
+    // iPadOS 13+ sometimes reports as Macintosh + touch points; we intentionally EXCLUDE iPad here (iPhone only)
+    const isIPhone = isIPhoneUA || isIPhonePlat;
     const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
-    if (isTop && isIOS && !isStandalone) {
+    if (isTop && isIPhone && !isStandalone) {
       setShowIOSBar(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
+    if (isStandalone) {
+      try {
+        if (localStorage.getItem('install_logged') !== '1') {
+          localStorage.setItem('install_logged', '1');
+          logInstall('standalone', 'first_open');
+        }
+      } catch {}
     }
   }, []);
 
   const installNow = async () => {
     const dp = dpRef.current;
-    setShowBar(false);
-    if (!dp?.prompt) return;
+    if (!dp?.prompt) return; // keep bar visible if prompt not ready
     try {
       dp.prompt();
       await dp.userChoice;
     } finally {
       dpRef.current = null;
+      setCanInstall(false);
     }
   };
 
@@ -75,7 +132,7 @@ export default function PWAInstallBridge() {
               <div style={{ fontSize: 12.5, opacity: 0.8 }}>Add to your home screen for a full‑screen experience.</div>
             </div>
             <button onClick={() => setShowBar(false)} style={{ padding: '8px 12px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600, marginRight: 6 }}>Not now</button>
-            <button onClick={installNow} style={{ padding: '8px 12px', borderRadius: 10, background: 'linear-gradient(90deg,#2563EB,#3B82F6)', color: 'white', border: 'none', fontWeight: 700, boxShadow: '0 8px 20px rgba(37,99,235,0.35)' }}>Install</button>
+            <button disabled={!canInstall} onClick={installNow} style={{ padding: '8px 12px', borderRadius: 10, background: canInstall ? 'linear-gradient(90deg,#2563EB,#3B82F6)' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>Install</button>
           </div>
         </div>
       )}
