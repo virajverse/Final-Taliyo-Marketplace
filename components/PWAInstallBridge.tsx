@@ -2,10 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-const PARENT_ORIGINS = [
+const DEFAULT_ORIGINS = [
   'https://taliyotechnologies.com',
   'https://www.taliyotechnologies.com',
 ];
+const ENV_ORIGINS = (process.env.NEXT_PUBLIC_PARENT_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const PARENT_ORIGINS = ENV_ORIGINS.length
+  ? ENV_ORIGINS
+  : (process.env.NODE_ENV !== 'production'
+      ? [...DEFAULT_ORIGINS, 'http://localhost:5173']
+      : DEFAULT_ORIGINS);
 
 export default function PWAInstallBridge() {
   const dpRef = useRef<any>(null);
@@ -38,11 +47,8 @@ export default function PWAInstallBridge() {
       if (data?.type !== 'taliyo-install') return;
       parentOriginRef.current = e.origin;
 
-      if (dpRef.current?.prompt) {
-        setShowOverlay(true);
-      } else {
-        try { window.parent?.postMessage({ type: 'pwa-install-result', status: 'unavailable' }, e.origin); } catch {}
-      }
+      // Always show overlay; if prompt unavailable, clicking Install will report 'unavailable'
+      setShowOverlay(true);
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
