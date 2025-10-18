@@ -58,16 +58,8 @@ export default function PWAInstallBridge() {
   // Show the bar by default on top-level non-iPhone when not standalone, even if BIP hasn't fired yet
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const isTop = window.top === window.self;
-    const ua = (navigator.userAgent || navigator.vendor || '').toLowerCase();
-    const isIPhoneUA = /iphone/.test(ua);
-    const isIPhonePlat = /iPhone/.test((navigator as any).platform || '');
-    const isIPhone = isIPhoneUA || isIPhonePlat;
     const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
-    if (isTop && !isStandalone && !isIPhone) {
-      setShowBar(true);
-      logEvent('bar_impression');
-    }
+    if (isStandalone) setShowBar(false);
   }, []);
 
   // Capture the beforeinstallprompt, do NOT auto-prompt
@@ -79,7 +71,7 @@ export default function PWAInstallBridge() {
       // If opened top-level with ?install=1, attempt prompt immediately
       try {
         const isTopLevel = window.top === window.self;
-        if (isTopLevel) { setShowBar(true); setShowIOSBar(false); }
+        if (isTopLevel) { setShowBar(true); setShowIOSBar(false); logEvent('bar_impression'); }
         const sp = new URLSearchParams(window.location.search);
         if (isTopLevel && sp.get('install') === '1' && dpRef.current?.prompt) {
           dpRef.current.prompt();
@@ -129,7 +121,12 @@ export default function PWAInstallBridge() {
 
   const installNow = async () => {
     const dp = dpRef.current;
-    if (!dp?.prompt) return; // keep bar visible if prompt not ready
+    if (!dp?.prompt) {
+      // Fallback: show instructions when prompt isn't available yet
+      try { await logEvent('install_click_no_bip'); } catch {}
+      alert('Install not available yet. In Chrome, tap the menu (⋮) and choose "Add to Home screen".');
+      return;
+    }
     try {
       logEvent('prompted');
       dp.prompt();
@@ -155,7 +152,7 @@ export default function PWAInstallBridge() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 100%', justifyContent: 'flex-end', marginTop: 8 }}>
               <button onClick={() => setShowBar(false)} style={{ padding: '8px 12px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600 }}>Not now</button>
-              <button aria-label="Install app" disabled={!canInstall} onClick={installNow} style={{ padding: '8px 16px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
+              <button aria-label="Install app" onClick={installNow} style={{ padding: '8px 16px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
                   <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   <path d="M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
