@@ -6,6 +6,7 @@ const ALLOWED_ORIGINS = new Set([
   'https://www.taliyotechnologies.com',
   'http://localhost:5173',
   'http://localhost:3000',
+  'https://final-taliyo-marketplace-admin-pane.vercel.app',
 ])
 
 function corsHeaders(req: NextRequest) {
