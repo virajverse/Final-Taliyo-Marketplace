@@ -154,7 +154,14 @@ export default function PWAInstallBridge() {
               <div style={{ fontSize: 12.5, opacity: 0.8 }}>Add to your home screen for a full‑screen experience.</div>
             </div>
             <button onClick={() => setShowBar(false)} style={{ padding: '8px 12px', borderRadius: 10, background: '#374151', color: '#E5E7EB', border: 'none', fontWeight: 600, marginRight: 6 }}>Not now</button>
-            <button disabled={!canInstall} onClick={installNow} style={{ padding: '8px 12px', borderRadius: 10, background: canInstall ? 'linear-gradient(90deg,#2563EB,#3B82F6)' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>Install</button>
+            <button disabled={!canInstall} onClick={installNow} style={{ padding: '8px 16px', borderRadius: 9999, background: canInstall ? '#2563EB' : '#6B7280', color: 'white', border: 'none', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: canInstall ? '0 8px 20px rgba(37,99,235,0.35)' : 'none', opacity: canInstall ? 1 : 0.85 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+                <path d="M12 5v10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M5 20h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              Install
+            </button>
           </div>
         </div>
       )}
