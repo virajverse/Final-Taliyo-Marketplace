@@ -32,6 +32,21 @@ export default function PWAInstallBridge() {
     } catch {}
   };
 
+  const logEvent = async (type: string) => {
+    try {
+      const device_id = getDeviceId();
+      const ua = navigator.userAgent;
+      const platform = (navigator as any).platform || '';
+      const lang = navigator.language || '';
+      const sp = new URLSearchParams(window.location.search || '');
+      const utm_source = sp.get('utm_source') || null;
+      const utm_medium = sp.get('utm_medium') || null;
+      const utm_campaign = sp.get('utm_campaign') || null;
+      const ref = document.referrer || null;
+      await supabase.from('pwa_install_events').insert({ device_id, type, ua, platform, lang, utm_source, utm_medium, utm_campaign, ref });
+    } catch {}
+  };
+
   // Optional: register SW (kept lightweight)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -51,6 +66,7 @@ export default function PWAInstallBridge() {
     const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
     if (isTop && !isStandalone && !isIPhone) {
       setShowBar(true);
+      logEvent('bar_impression');
     }
   }, []);
 
@@ -93,6 +109,7 @@ export default function PWAInstallBridge() {
     const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || (navigator as any).standalone;
     if (isTop && isIPhone && !isStandalone) {
       setShowIOSBar(true);
+      logEvent('ios_hint_impression');
     }
   }, []);
 
@@ -105,6 +122,7 @@ export default function PWAInstallBridge() {
           localStorage.setItem('install_logged', '1');
           logInstall('standalone', 'first_open');
         }
+        logEvent('open');
       } catch {}
     }
   }, []);
@@ -113,8 +131,12 @@ export default function PWAInstallBridge() {
     const dp = dpRef.current;
     if (!dp?.prompt) return; // keep bar visible if prompt not ready
     try {
+      logEvent('prompted');
       dp.prompt();
-      await dp.userChoice;
+      const choice = await dp.userChoice;
+      if (choice && choice.outcome === 'dismissed') {
+        logEvent('dismissed');
+      }
     } finally {
       dpRef.current = null;
       setCanInstall(false);
