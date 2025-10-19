@@ -347,6 +347,64 @@ do $$ begin
   end if;
 end $$;
 
+-- Site settings: enable RLS and allow public read
+alter table site_settings enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='site_settings' and policyname='site_settings_select_public') then
+    create policy site_settings_select_public on site_settings for select using (true);
+  end if;
+end $$;
+
+-- PWA tracking tables (idempotent)
+create table if not exists pwa_installs (
+  id bigserial primary key,
+  device_id text not null,
+  source text,
+  event text not null,
+  ua text,
+  platform text,
+  lang text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  ref text,
+  created_at timestamptz not null default now()
+);
+
+alter table pwa_installs enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='pwa_installs' and policyname='pwa_installs_insert_public') then
+    create policy pwa_installs_insert_public on pwa_installs for insert with check (true);
+  end if;
+end $$;
+
+create index if not exists idx_pwa_installs_event_created on pwa_installs(event, created_at);
+create index if not exists idx_pwa_installs_device on pwa_installs(device_id);
+
+create table if not exists pwa_install_events (
+  id bigserial primary key,
+  device_id text not null,
+  type text not null,
+  ua text,
+  platform text,
+  lang text,
+  utm_source text,
+  utm_medium text,
+  utm_campaign text,
+  ref text,
+  created_at timestamptz not null default now()
+);
+
+alter table pwa_install_events enable row level security;
+do $$ begin
+  if not exists (select 1 from pg_policies where tablename='pwa_install_events' and policyname='pwa_install_events_insert_public') then
+    create policy pwa_install_events_insert_public on pwa_install_events for insert with check (true);
+  end if;
+end $$;
+
+create index if not exists idx_pwa_install_events_type_created on pwa_install_events(type, created_at);
+create index if not exists idx_pwa_install_events_device on pwa_install_events(device_id);
+
 -- Helpful indexes
 create index if not exists idx_categories_sort on categories(sort_order);
 create index if not exists idx_banners_active_sort on banners(active, sort_order);
