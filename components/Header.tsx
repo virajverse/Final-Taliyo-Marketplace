@@ -3,6 +3,7 @@
 import { Search, ShoppingCart, Menu, X, Home, Grid3X3, Heart, Clock, User, HelpCircle, Phone } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import PWAInstallBridge from './PWAInstallBridge';
 
 interface HeaderProps {
   cartCount?: number;
@@ -77,6 +78,9 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               )}
             </div>
           </Link>
+
+          {/* PWA Install Button */}
+          <PWAInstallBridge />
         </div>
       </div>
 

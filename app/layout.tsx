@@ -17,6 +17,13 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#2563eb" />
+        <meta name="application-name" content="Taliyo" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Taliyo" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="https://placehold.co/180x180/png" />
       </head>
       <body className={`no-scrollbar overflow-x-hidden ${inter.className}`}>
         <AuthProvider>
@@ -28,11 +35,18 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `(() => {
   try {
+    // Capture beforeinstallprompt early so UI can use it when mounted
+    window.addEventListener('beforeinstallprompt', (e) => {
+      try { e.preventDefault(); } catch {}
+      try { window.__bip = e; window.__bipSetup = true; } catch {}
+      try { window.dispatchEvent(new Event('bipready')); } catch {}
+    });
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(rs => { try { rs.forEach(r => r.unregister()); } catch {} });
-      try { caches.keys().then(keys => keys.forEach(k => caches.delete(k))); } catch {}
+      window.addEventListener('load', () => {
+        try { navigator.serviceWorker.register('/sw.js'); } catch {}
+      });
     }
-    try { window.__bip = null; window.__bipSetup = false; } catch {}
   } catch {}
 })();`,
           }}
