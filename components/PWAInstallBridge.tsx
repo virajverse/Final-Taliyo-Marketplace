@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function PWAInstallBridge() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -8,6 +9,59 @@ export default function PWAInstallBridge() {
   const [installed, setInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
+  const [deviceId, setDeviceId] = useState<string>("");
+
+  const ensureDeviceId = () => {
+    try {
+      let id = localStorage.getItem("pwa_device_id");
+      if (!id) {
+        try {
+          id = (crypto as any)?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        } catch {
+          id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        }
+        localStorage.setItem("pwa_device_id", id);
+      }
+      setDeviceId(id);
+      return id;
+    } catch {
+      const id = `${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      setDeviceId(id);
+      return id;
+    }
+  };
+
+  const getUserMeta = async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const u = data?.user;
+      return { user_id: u?.id || null, user_email: u?.email || null };
+    } catch {
+      return { user_id: null, user_email: null };
+    }
+  };
+
+  const postEvent = async (payload: Record<string, any>) => {
+    try {
+      const id = deviceId || ensureDeviceId();
+      const user = await getUserMeta();
+      const body = {
+        device_id: id,
+        ua: typeof navigator !== "undefined" ? navigator.userAgent : "",
+        lang: typeof navigator !== "undefined" ? navigator.language : "",
+        platform: (navigator as any)?.platform || "",
+        ref: typeof document !== "undefined" ? document.referrer : "",
+        ...user,
+        ...payload,
+      };
+      await fetch("/api/pwa-installs/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        credentials: "omit",
+      });
+    } catch {}
+  };
 
   useEffect(() => {
     const ua = typeof window !== "undefined" ? window.navigator.userAgent : "";
@@ -15,10 +69,21 @@ export default function PWAInstallBridge() {
     const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
     const standalone = (navigator as any).standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     setIsIOS(iOS && isSafari);
+    ensureDeviceId();
 
     if (standalone || localStorage.getItem("pwaInstalled") === "1") {
       setVisible(false);
       setInstalled(true);
+      try {
+        const id = ensureDeviceId();
+        const key = `first_open_sent_${id}`;
+        const sent = localStorage.getItem(key);
+        if (!sent) {
+          localStorage.setItem("pwaInstalled", "1");
+          localStorage.setItem(key, "1");
+          postEvent({ event: "first_open" });
+        }
+      } catch {}
       return;
     }
 
@@ -36,6 +101,8 @@ export default function PWAInstallBridge() {
       setDeferredPrompt(e);
       setVisible(true);
       (window as any).__bip = e;
+      // Impression of install affordance on non-iOS
+      if (!isIOS) postEvent({ type: "bar_impression" });
     };
 
     const handleAppInstalled = () => {
@@ -43,6 +110,7 @@ export default function PWAInstallBridge() {
       setInstalled(true);
       setTimeout(() => setVisible(false), 1200);
       setDeferredPrompt(null);
+      postEvent({ event: "appinstalled" });
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt as any);
@@ -58,7 +126,11 @@ export default function PWAInstallBridge() {
     window.addEventListener("bipready", handleBipReady);
     window.addEventListener("appinstalled", handleAppInstalled);
 
-    if (iOS && !standalone) setVisible(true);
+    if (iOS && !standalone) {
+      setVisible(true);
+      // iOS hint impression (no native BIP)
+      postEvent({ type: "ios_hint_impression" });
+    }
 
     const mm = window.matchMedia("(display-mode: standalone)");
     const onChange = () => {
@@ -66,6 +138,16 @@ export default function PWAInstallBridge() {
         localStorage.setItem("pwaInstalled", "1");
         setInstalled(true);
         setTimeout(() => setVisible(false), 1200);
+        // First open inside PWA (once)
+        try {
+          const id = deviceId || ensureDeviceId();
+          const key = `first_open_sent_${id}`;
+          const sent = localStorage.getItem(key);
+          if (!sent) {
+            localStorage.setItem(key, "1");
+            postEvent({ event: "first_open" });
+          }
+        } catch {}
       }
     };
     mm.addEventListener("change", onChange);
@@ -86,6 +168,8 @@ export default function PWAInstallBridge() {
       return;
     }
     if (deferredPrompt) {
+      // User prompted
+      postEvent({ type: "prompted" });
       deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
       setDeferredPrompt(null);

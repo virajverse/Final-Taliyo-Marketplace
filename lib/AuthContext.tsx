@@ -72,6 +72,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
           }
+          try {
+            const did = typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
+            if (did && uBase.id) {
+              await fetch('/api/pwa-installs/map-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_id: did, user_id: uBase.id, user_email: uBase.email || null })
+              });
+            }
+          } catch {}
           // Log login event once per 6 hours
           try {
             const now = Date.now();
@@ -130,6 +140,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
           }
+          try {
+            const did = typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
+            if (did && uBase.id) {
+              await fetch('/api/pwa-installs/map-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_id: did, user_id: uBase.id, user_email: uBase.email || null })
+              });
+            }
+          } catch {}
           // On explicit sign-in, log login event
           if (event === 'SIGNED_IN') {
             try {

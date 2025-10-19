@@ -381,6 +381,27 @@ end $$;
 create index if not exists idx_pwa_installs_event_created on pwa_installs(event, created_at);
 create index if not exists idx_pwa_installs_device on pwa_installs(device_id);
 
+-- Add user mapping columns to pwa_installs (idempotent)
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pwa_installs' and column_name = 'user_id'
+  ) then
+    alter table pwa_installs add column user_id uuid references auth.users(id);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pwa_installs' and column_name = 'user_email'
+  ) then
+    alter table pwa_installs add column user_email text;
+  end if;
+end $$;
+
+create index if not exists idx_pwa_installs_user on pwa_installs(user_id);
+
 create table if not exists pwa_install_events (
   id bigserial primary key,
   device_id text not null,
@@ -404,6 +425,27 @@ end $$;
 
 create index if not exists idx_pwa_install_events_type_created on pwa_install_events(type, created_at);
 create index if not exists idx_pwa_install_events_device on pwa_install_events(device_id);
+
+-- Add user mapping columns to pwa_install_events (idempotent)
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pwa_install_events' and column_name = 'user_id'
+  ) then
+    alter table pwa_install_events add column user_id uuid references auth.users(id);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'pwa_install_events' and column_name = 'user_email'
+  ) then
+    alter table pwa_install_events add column user_email text;
+  end if;
+end $$;
+
+create index if not exists idx_pwa_install_events_user on pwa_install_events(user_id);
 
 -- Helpful indexes
 create index if not exists idx_categories_sort on categories(sort_order);
