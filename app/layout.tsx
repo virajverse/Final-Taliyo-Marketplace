@@ -22,6 +22,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Taliyo" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <script dangerouslySetInnerHTML={{__html: `try{var t=localStorage.getItem('theme');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var d=(t==='dark')||(!t&&m);var el=document.documentElement;d?el.classList.add('dark'):el.classList.remove('dark');}catch(e){}`}} />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="https://placehold.co/180x180/png" />
       </head>

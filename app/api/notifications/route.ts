@@ -29,7 +29,6 @@ export async function GET(req: Request) {
     const { data, error } = await supabase
       .from('notifications')
       .select('id,type,title,message,is_read,created_at')
-      .not('user_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(limit)
 

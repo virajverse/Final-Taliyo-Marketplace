@@ -111,11 +111,13 @@ export default function Login() {
         setLoading(false);
         return;
       }
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const { data, error } = await supabase.auth.signUp({
         email: signupForm.email,
         password: signupForm.password,
         options: {
           data: { name: signupForm.name, phone: signupForm.phone },
+          emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
         },
       });
       if (error) throw error;

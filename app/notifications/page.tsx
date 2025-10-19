@@ -19,6 +19,7 @@ interface Notification {
 
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const fetchNotifications = async () => {
     try {
@@ -42,23 +43,36 @@ export default function Notifications() {
     }
   }
 
-  // Initial load + polling fallback
   useEffect(() => {
     fetchNotifications()
     const id = setInterval(fetchNotifications, 60000)
     return () => clearInterval(id)
   }, [])
 
-  // Realtime subscription
+  // Load current user id for realtime filtering
   useEffect(() => {
-    const channel = supabase
-      .channel('notifications_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
-        fetchNotifications()
-      })
-      .subscribe()
-    return () => { supabase.removeChannel(channel) }
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getUser();
+        setUserId(data.user?.id ?? null);
+      } catch {}
+    })();
   }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !navigator.onLine) return;
+    const channel = supabase.channel('notifications_realtime');
+    // Global notifications
+    channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=is.null' }, () => { fetchNotifications() });
+    // Per-user notifications
+    if (userId) {
+      channel
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => { fetchNotifications() })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => { fetchNotifications() });
+    }
+    channel.subscribe();
+    return () => { supabase.removeChannel(channel) }
+  }, [userId])
 
   const markAsRead = (id: string) => {
     setNotifications((prev: Notification[]) =>
@@ -117,7 +131,7 @@ export default function Notifications() {
   const unreadCount = notifications.filter((n: Notification) => !n.is_read).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <Header />
       
       <div className="pt-4 pb-20 px-4">
@@ -126,15 +140,17 @@ export default function Notifications() {
           <div className="flex items-center gap-4">
             <Link
               href="/profile"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-              <p className="text-gray-600">
-                {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
+              {notifications.length > 0 && (
+                <p className="text-gray-600 dark:text-gray-400">
+                  {unreadCount > 0 ? `${unreadCount} unread notifications` : 'All caught up!'}
+                </p>
+              )}
             </div>
           </div>
           
@@ -155,8 +171,8 @@ export default function Notifications() {
               <div
                 key={notification.id}
                 onClick={() => markAsRead(notification.id)}
-                className={`bg-white rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
-                  notification.is_read ? 'border-gray-200' : 'border-blue-200 bg-blue-50'
+                className={`bg-white dark:bg-gray-900 rounded-xl p-4 shadow-sm border cursor-pointer transition-all hover:shadow-md ${
+                  notification.is_read ? 'border-gray-200 dark:border-gray-800' : 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950'
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -167,17 +183,17 @@ export default function Notifications() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className={`font-medium ${
-                        notification.is_read ? 'text-gray-900' : 'text-gray-900 font-semibold'
+                        notification.is_read ? 'text-gray-900 dark:text-gray-100' : 'text-gray-900 dark:text-gray-100 font-semibold'
                       }`}>
                         {notification.title}
                       </h3>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                         {notification.created_at ? new Date(notification.created_at).toLocaleString() : ''}
                       </span>
                     </div>
                     
                     <p className={`text-sm mt-1 ${
-                      notification.is_read ? 'text-gray-600' : 'text-gray-700'
+                      notification.is_read ? 'text-gray-600 dark:text-gray-400' : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {notification.message}
                     </p>
@@ -190,17 +206,7 @@ export default function Notifications() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12">
-            <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No Notifications
-            </h3>
-            <p className="text-gray-600">
-              You're all caught up! We'll notify you when something important happens.
-            </p>
-          </div>
-        )}
+        ) : null}
       </div>
 
       <BottomNavigation />

@@ -116,6 +116,21 @@ export default function Settings() {
     } catch {}
   };
 
+  // Apply theme immediately when dark mode changes
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    try {
+      const el = document.documentElement;
+      if (settings.preferences.darkMode) {
+        el.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        el.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+      }
+    } catch {}
+  }, [settings.preferences.darkMode]);
+
   const settingSections: { title: string; items: SettingItem[] }[] = [
     {
       title: 'Account',
