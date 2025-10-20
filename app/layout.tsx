@@ -1,4 +1,5 @@
 import { Inter } from 'next/font/google';
+import { Suspense } from 'react';
 import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/lib/AuthContext';
@@ -32,9 +33,11 @@ export default function RootLayout({
       <body className={`no-scrollbar overflow-x-hidden ${inter.className}`}>
         <ToastProvider>
           <AuthProvider>
-            <ProtectedRoute>
-              {children}
-            </ProtectedRoute>
+            <Suspense fallback={null}>
+              <ProtectedRoute>
+                {children}
+              </ProtectedRoute>
+            </Suspense>
           </AuthProvider>
         </ToastProvider>
         {process.env.NEXT_PUBLIC_GA_ID ? (
@@ -51,7 +54,9 @@ export default function RootLayout({
   gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { page_path: window.location.pathname });
               `}
             </Script>
-            <Analytics id={process.env.NEXT_PUBLIC_GA_ID} />
+            <Suspense fallback={null}>
+              <Analytics id={process.env.NEXT_PUBLIC_GA_ID} />
+            </Suspense>
           </>
         ) : null}
 

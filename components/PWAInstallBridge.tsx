@@ -13,7 +13,7 @@ export default function PWAInstallBridge() {
 
   const ensureDeviceId = () => {
     try {
-      let id = localStorage.getItem("pwa_device_id");
+      let id: string = localStorage.getItem("pwa_device_id") || "";
       if (!id) {
         try {
           id = (crypto as any)?.randomUUID?.() || `${Date.now()}_${Math.random().toString(36).slice(2)}`;
