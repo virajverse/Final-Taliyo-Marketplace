@@ -22,8 +22,8 @@ type Banner = {
   aria_label?: string | null;
 };
 
-export default function BannerSlider() {
-  const [banners, setBanners] = useState<Banner[]>([]);
+export default function BannerSlider({ initialBanners = [] as Banner[] }: { initialBanners?: Banner[] }) {
+  const [banners, setBanners] = useState<Banner[]>(initialBanners);
   const [active, setActive] = useState(0);
   const slides = useMemo(() => banners, [banners]);
 

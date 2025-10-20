@@ -47,10 +47,10 @@ interface Category {
   updated_at: string;
 }
 
-export default function Home() {
-  const [featuredServices, setFeaturedServices] = useState<Service[]>([]);
-  const [popularCategories, setPopularCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function Home({ initialFeaturedServices = [], initialCategories = [] }: { initialFeaturedServices?: Service[]; initialCategories?: Category[]; }) {
+  const [featuredServices, setFeaturedServices] = useState<Service[]>(initialFeaturedServices);
+  const [popularCategories, setPopularCategories] = useState<Category[]>(initialCategories);
+  const [loading, setLoading] = useState(!(initialFeaturedServices.length && initialCategories.length));
   const [cartCount, setCartCount] = useState(0);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   
@@ -63,8 +63,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData({ silent: (initialFeaturedServices.length > 0 || initialCategories.length > 0) });
+  }, [initialFeaturedServices.length, initialCategories.length]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -82,8 +82,8 @@ export default function Home() {
     if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase
       .channel('home_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchData({ silent: true }))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchData({ silent: true }))
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, []);
@@ -106,32 +106,35 @@ export default function Home() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
-  const fetchData = async () => {
+  const fetchData = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
+      if (!silent) setLoading(true);
       const [{ data: services }, { data: categories }] = await Promise.all([
         supabase
           .from('services')
-          .select('*')
+          .select('id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at')
           .eq('is_active', true)
           .eq('is_featured', true)
           .order('created_at', { ascending: false })
           .limit(6),
         supabase
           .from('categories')
-          .select('*')
+          .select('id,name,description,icon,slug,is_active,sort_order')
           .eq('is_active', true)
           .order('sort_order', { ascending: true })
           .limit(8)
       ]);
 
-      setFeaturedServices(services || []);
-      setPopularCategories((categories || []).slice(0, 8));
+      if (services) setFeaturedServices(services as any);
+      if (categories) setPopularCategories((categories as any).slice(0, 8));
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      setFeaturedServices([]);
-      setPopularCategories([]);
+      if (!silent) {
+        setFeaturedServices([]);
+        setPopularCategories([]);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

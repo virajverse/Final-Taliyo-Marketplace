@@ -1,20 +1,28 @@
 /** @type {import('next').NextConfig} */
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+let supabaseHost = '';
+try {
+  supabaseHost = new URL(supabaseUrl).hostname;
+} catch {}
+
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['placehold.co', 'picsum.photos'],
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-        pathname: '/storage/v1/render/image/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**.supabase.co',
-        pathname: '/storage/v1/object/**',
-      },
-    ],
+    domains: ['placehold.co', 'picsum.photos', ...(supabaseHost ? [supabaseHost] : [])],
+    remotePatterns: supabaseHost
+      ? [
+          {
+            protocol: 'https',
+            hostname: supabaseHost,
+            pathname: '/storage/v1/render/image/**',
+          },
+          {
+            protocol: 'https',
+            hostname: supabaseHost,
+            pathname: '/storage/v1/object/**',
+          },
+        ]
+      : [],
   },
   async headers() {
     return [

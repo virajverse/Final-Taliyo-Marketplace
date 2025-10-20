@@ -1,12 +1,9 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { ArrowRight, Package } from 'lucide-react';
 import Link from 'next/link';
 import IconMapper from '@/components/IconMapper';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseServer } from '@/lib/supabaseServer';
 
 interface Category {
   id: string;
@@ -16,41 +13,20 @@ interface Category {
   slug: string;
   is_active: boolean;
   sort_order: number;
-  created_at: string;
-  updated_at: string;
 }
 
-export default function Categories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export const revalidate = 0;
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('categories_page')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchCategories())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      const { data } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-      setCategories(data || []);
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function Categories() {
+  let categories: Category[] = [];
+  try {
+    const { data } = await supabaseServer
+      .from('categories')
+      .select('id,name,description,icon,slug,is_active,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    categories = (data as any) || [];
+  } catch {}
 
   const getIconName = (iconName: string) => {
     const iconMap: { [key: string]: string } = {
@@ -61,26 +37,6 @@ export default function Categories() {
     };
     return iconMap[iconName] || 'package';
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="pt-4 pb-20 px-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, index) => (
-              <div key={index} className="bg-white rounded-2xl p-4 animate-pulse">
-                <div className="w-12 h-12 bg-gray-200 rounded-full mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <BottomNavigation />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
