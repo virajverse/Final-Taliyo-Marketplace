@@ -450,3 +450,8 @@ create index if not exists idx_pwa_install_events_user on pwa_install_events(use
 -- Helpful indexes
 create index if not exists idx_categories_sort on categories(sort_order);
 create index if not exists idx_banners_active_sort on banners(active, sort_order);
+-- Admin/analytics helpful indexes
+create index if not exists idx_order_clicks_created on order_clicks(created_at desc);
+create index if not exists idx_order_clicks_service on order_clicks(service_id);
+create index if not exists idx_bookings_status on bookings(status);
+create index if not exists idx_bookings_status_created on bookings(status, created_at);

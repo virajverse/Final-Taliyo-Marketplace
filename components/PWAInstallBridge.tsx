@@ -71,7 +71,8 @@ export default function PWAInstallBridge() {
     setIsIOS(iOS && isSafari);
     ensureDeviceId();
 
-    if (standalone || localStorage.getItem("pwaInstalled") === "1") {
+    // If currently running in standalone, mark installed and return early
+    if (standalone) {
       setVisible(false);
       setInstalled(true);
       try {
@@ -80,12 +81,34 @@ export default function PWAInstallBridge() {
         const sent = localStorage.getItem(key);
         if (!sent) {
           localStorage.setItem("pwaInstalled", "1");
+          localStorage.setItem("pwaInstalledAt", String(Date.now()));
           localStorage.setItem(key, "1");
           postEvent({ event: "first_open" });
         }
       } catch {}
       return;
     }
+
+    // Not in standalone: verify uninstall and clear stale install flags if necessary
+    (async () => {
+      try {
+        const anyNav: any = navigator as any;
+        if (typeof anyNav.getInstalledRelatedApps === 'function') {
+          const apps = await anyNav.getInstalledRelatedApps();
+          const hasWebApp = Array.isArray(apps) && apps.some((a: any) => a.platform === 'webapp');
+          if (!hasWebApp) {
+            localStorage.removeItem('pwaInstalled');
+            localStorage.removeItem('pwaInstalledAt');
+          }
+        } else {
+          const ts = Number(localStorage.getItem('pwaInstalledAt') || '0');
+          if (localStorage.getItem('pwaInstalled') === '1' && ts && (Date.now() - ts) > 7 * 24 * 60 * 60 * 1000) {
+            localStorage.removeItem('pwaInstalled');
+            localStorage.removeItem('pwaInstalledAt');
+          }
+        }
+      } catch {}
+    })();
 
     // Adopt any previously captured beforeinstallprompt event
     try {
@@ -95,6 +118,11 @@ export default function PWAInstallBridge() {
         setVisible(true);
       }
     } catch {}
+
+    // Fallback: if not installed and no BIP yet, still show the bar so user can see how to install
+    if (!iOS && !standalone) {
+      setVisible(true);
+    }
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
@@ -107,6 +135,7 @@ export default function PWAInstallBridge() {
 
     const handleAppInstalled = () => {
       localStorage.setItem("pwaInstalled", "1");
+      localStorage.setItem("pwaInstalledAt", String(Date.now()));
       setInstalled(true);
       setTimeout(() => setVisible(false), 1200);
       setDeferredPrompt(null);
@@ -136,6 +165,7 @@ export default function PWAInstallBridge() {
     const onChange = () => {
       if (mm.matches) {
         localStorage.setItem("pwaInstalled", "1");
+        localStorage.setItem("pwaInstalledAt", String(Date.now()));
         setInstalled(true);
         setTimeout(() => setVisible(false), 1200);
         // First open inside PWA (once)
@@ -178,16 +208,23 @@ export default function PWAInstallBridge() {
         setInstalled(true);
         setTimeout(() => setVisible(false), 1200);
       }
+      return;
     }
+    // No BIP available: show help overlay for Android/Desktop
+    setShowIOSHelp(true);
   };
 
   return (
     <>
       <button
         onClick={onClick}
-        disabled={installed || (!isIOS && !deferredPrompt)}
+        disabled={installed}
         className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-          installed ? "bg-green-600 text-white cursor-default opacity-100" : (!isIOS && !deferredPrompt ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700")
+          installed
+            ? "bg-green-600 text-white cursor-default opacity-100"
+            : !isIOS && !deferredPrompt
+              ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              : "bg-blue-600 text-white hover:bg-blue-700"
         }`}
         style={{ WebkitTapHighlightColor: "transparent" }}
       >
@@ -197,12 +234,20 @@ export default function PWAInstallBridge() {
       {showIOSHelp && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50">
           <div className="bg-white rounded-2xl p-4 max-w-sm w-full mx-4 text-sm shadow-lg">
-            <div className="text-base font-semibold mb-2">Install on iPhone</div>
-            <ol className="list-decimal list-inside space-y-1 text-gray-700">
-              <li>Tap the Share button in Safari.</li>
-              <li>Choose Add to Home Screen.</li>
-              <li>Tap Add.</li>
-            </ol>
+            <div className="text-base font-semibold mb-2">{isIOS ? 'Install on iPhone' : 'Install on Android/Desktop'}</div>
+            {isIOS ? (
+              <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                <li>Tap the Share button in Safari.</li>
+                <li>Choose Add to Home Screen.</li>
+                <li>Tap Add.</li>
+              </ol>
+            ) : (
+              <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                <li>Open the browser menu (⋮ or ⋯).</li>
+                <li>Select Install App or Add to Home screen.</li>
+                <li>Confirm to add the app to your device.</li>
+              </ol>
+            )}
             <button
               onClick={() => setShowIOSHelp(false)}
               className="mt-3 w-full bg-gray-900 text-white rounded-lg py-2 hover:bg-black transition-colors"
