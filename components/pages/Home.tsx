@@ -47,7 +47,7 @@ interface Category {
   updated_at: string;
 }
 
-export default function Home({ initialFeaturedServices = [], initialCategories = [] }: { initialFeaturedServices?: Service[]; initialCategories?: Category[]; }) {
+export default function Home({ initialFeaturedServices = [], initialCategories = [], initialBanners = [] as any[] }: { initialFeaturedServices?: Service[]; initialCategories?: Category[]; initialBanners?: any[]; }) {
   const [featuredServices, setFeaturedServices] = useState<Service[]>(initialFeaturedServices);
   const [popularCategories, setPopularCategories] = useState<Category[]>(initialCategories);
   const [loading, setLoading] = useState(!(initialFeaturedServices.length && initialCategories.length));
@@ -197,7 +197,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
       <Header cartCount={cartCount} />
       
       <div className="pt-4 pb-20 px-4">
-        <BannerSlider />
+        <BannerSlider initialBanners={initialBanners} />
 
         <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
           <div className="bg-white rounded-xl p-3 sm:p-4 text-center shadow-sm border border-gray-100">

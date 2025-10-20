@@ -27,8 +27,36 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
   const [active, setActive] = useState(0);
   const slides = useMemo(() => banners, [banners]);
 
+  // Filter banners by schedule/target
+  const filterScheduled = (data: any[]) => {
+    const now = Date.now();
+    const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : true;
+    return (data || []).filter((b: any) => {
+      const s = b.start_at ? Date.parse(b.start_at) : null;
+      const e = b.end_at ? Date.parse(b.end_at) : null;
+      if (s && now < s) return false;
+      if (e && now > e) return false;
+      const tgt = (b.target || 'all') as Banner['target'];
+      if (tgt === 'mobile' && !isMobile) return false;
+      if (tgt === 'desktop' && isMobile) return false;
+      return true;
+    });
+  };
+
+  // If SSR provided banners, apply schedule filter once and skip client fetch
+  useEffect(() => {
+    if (initialBanners && initialBanners.length) {
+      setBanners(filterScheduled(initialBanners));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialBanners && initialBanners.length]);
+
   useEffect(() => {
     let mounted = true;
+    // If initial banners exist, avoid client fetch (prevents 403s with strict RLS)
+    if (initialBanners && initialBanners.length) {
+      return () => { mounted = false; };
+    }
     (async () => {
       try {
         // Read optional banner limit from site_settings
@@ -51,18 +79,7 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
           .limit(limit);
         if (!mounted) return;
         if (data && data.length) {
-          const now = Date.now();
-          const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : true;
-          const scheduled = (data as any[]).filter((b) => {
-            const s = b.start_at ? Date.parse(b.start_at) : null;
-            const e = b.end_at ? Date.parse(b.end_at) : null;
-            if (s && now < s) return false;
-            if (e && now > e) return false;
-            const tgt = (b.target || 'all') as Banner['target'];
-            if (tgt === 'mobile' && !isMobile) return false;
-            if (tgt === 'desktop' && isMobile) return false;
-            return true;
-          });
+          const scheduled = filterScheduled(data as any[]);
           setBanners(scheduled as any);
         }
         else {
@@ -87,7 +104,7 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [initialBanners && initialBanners.length]);
 
   useEffect(() => {
     if (slides.length <= 1) return;

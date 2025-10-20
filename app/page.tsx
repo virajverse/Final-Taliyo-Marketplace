@@ -1,12 +1,15 @@
 import HomePage from '@/components/pages/Home';
 import { supabaseServer } from '@/lib/supabaseServer';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const revalidate = 0;
 
 export default async function Page() {
   let featured: any[] = [];
   let categories: any[] = [];
+  let banners: any[] = [];
   try {
+    const client = supabaseAdmin || supabaseServer;
     const [{ data: services }, { data: cats }] = await Promise.all([
       supabaseServer
         .from('services')
@@ -24,6 +27,26 @@ export default async function Page() {
     ]);
     featured = services || [];
     categories = cats || [];
+    // Get banner limit from site_settings and fetch banners
+    let limit = 3;
+    try {
+      const { data: setting } = await client
+        .from('site_settings')
+        .select('value')
+        .eq('key', 'home_banner_limit')
+        .maybeSingle();
+      const parsed = Number((setting as any)?.value);
+      if (!Number.isNaN(parsed) && parsed > 0) limit = parsed;
+    } catch {}
+    try {
+      const { data: bnn } = await client
+        .from('banners')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true })
+        .limit(limit);
+      banners = bnn || [];
+    } catch {}
   } catch {}
-  return <HomePage initialFeaturedServices={featured} initialCategories={categories} />;
+  return <HomePage initialFeaturedServices={featured} initialCategories={categories} initialBanners={banners} />;
 }
