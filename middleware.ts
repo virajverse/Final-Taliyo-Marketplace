@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const PROTECTED = ['/orders', '/wishlist', '/reviews', '/order-status', '/notifications']
+const PROTECTED = ['/orders', '/wishlist', '/reviews', '/order-status', '/notifications', '/profile', '/cart', '/settings']
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
@@ -25,5 +25,8 @@ export const config = {
     '/reviews/:path*',
     '/order-status/:path*',
     '/notifications/:path*',
+    '/profile/:path*',
+    '/cart/:path*',
+    '/settings/:path*',
   ],
 }

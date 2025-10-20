@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 
@@ -143,13 +145,13 @@ export default function Orders() {
       id: b.id,
       serviceTitle: b.service_title || 'Service',
       providerName: b.provider_name || 'Provider',
-      providerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+      providerAvatar: 'https://picsum.photos/seed/provider-avatar/100/100',
       amount: Number(b.final_price || 0),
       status: (b.status || 'pending') as Order['status'],
       bookingDate: b.created_at,
       scheduledDate: b.preferred_date || undefined,
       completedDate: b.status === 'completed' ? b.updated_at : undefined,
-      image: (Array.isArray(b.images) ? b.images[0] : (b.images ? JSON.parse(b.images || '[]')[0] : '')) || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop',
+      image: (Array.isArray(b.images) ? b.images[0] : (b.images ? JSON.parse(b.images || '[]')[0] : '')) || 'https://picsum.photos/seed/order-image/400/300',
       description: b.message || b.requirements || '',
       timeline: b.delivery_preference || b.timeline || '',
       phone: b.phone || b.customer_phone || ''
@@ -260,9 +262,12 @@ export default function Orders() {
               {/* Order Header */}
               <div className="flex items-start justify-between gap-3 mb-5">
                 <div className="flex items-start gap-3">
-                  <img
+                  <Image
                     src={order.image}
                     alt={order.serviceTitle}
+                    width={56}
+                    height={56}
+                    loader={isSupabaseUrl(order.image) ? supabaseImageLoader : undefined}
                     className="w-14 h-14 rounded-xl object-cover border border-gray-200"
                   />
                   <div className="space-y-1">
@@ -289,9 +294,12 @@ export default function Orders() {
 
               {/* Provider Info */}
               <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-4 mb-5 flex items-center gap-3">
-                <img
+                <Image
                   src={order.providerAvatar}
                   alt={order.providerName}
+                  width={40}
+                  height={40}
+                  loader={isSupabaseUrl(order.providerAvatar) ? supabaseImageLoader : undefined}
                   className="w-10 h-10 rounded-full object-cover border border-white shadow-sm"
                 />
                 <div className="flex-1">

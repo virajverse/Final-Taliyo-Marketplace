@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
-import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import { useToast } from '@/components/ToastProvider';
 
 import { 
   ArrowLeft, 
@@ -20,11 +20,11 @@ import Link from 'next/link';
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: ''
@@ -39,17 +39,20 @@ export default function Login() {
     confirmPassword: ''
   });
 
-  const showToastMessage = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const showToastMessage = (message: string) => { toast.info(message); };
+  
+  const isDisposableEmail = (email: string) => {
+    const domain = email.split('@')[1]?.toLowerCase() || '';
+    if (!domain) return true;
+    const block = [
+      'tempmail.com','10minutemail.com','guerrillamail.com','sharklasers.com','mailinator.com','yopmail.com','trashmail.com','discard.email','getnada.com','nada.ltd','maildrop.cc','mintemail.com','spambog.com','moakt.com','fakeinbox.com','temporary-mail.net','temp-mail.io','mytemp.email','emailondeck.com','throwawaymail.com','inboxkitten.com','mail7.io','tmails.net','tmpmail.org'
+    ];
+    return block.some(b => domain === b || domain.endsWith('.' + b));
   };
-
-  const { login } = useAuth();
   
   const handleResetPassword = async () => {
     if (!loginForm.email) {
-      showToastMessage('Enter your email above first');
+      toast.info('Enter your email above first');
       return;
     }
     try {
@@ -57,9 +60,9 @@ export default function Login() {
       await supabase.auth.resetPasswordForEmail(loginForm.email, {
         redirectTo: origin ? `${origin}/reset-password` : undefined,
       });
-      showToastMessage('Password reset email sent');
+      toast.success('Password reset email sent');
     } catch {
-      showToastMessage('Failed to send reset email');
+      toast.error('Failed to send reset email');
     }
   };
 
@@ -69,7 +72,7 @@ export default function Login() {
     
     // Validate form
     if (!loginForm.email || !loginForm.password) {
-      showToastMessage('Please fill all fields');
+      toast.info('Please fill all fields');
       setLoading(false);
       return;
     }
@@ -80,17 +83,48 @@ export default function Login() {
           localStorage.setItem('rememberMe', rememberMe ? 'true' : 'false');
         }
       } catch {}
+      // Server-side disposable email check
+      try {
+        const res = await fetch('/api/auth/check-domain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: loginForm.email }),
+        });
+        const json = await res.json();
+        if (res.ok && json?.disposable) {
+          toast.error('Disposable/temporary emails are not allowed.');
+          setLoading(false);
+          return;
+        }
+      } catch {}
+
       const { error } = await supabase.auth.signInWithPassword({
         email: loginForm.email,
         password: loginForm.password,
       });
       if (error) throw error;
-      showToastMessage('Login successful!');
-      setTimeout(() => {
-        router.push('/');
-      }, 800);
-    } catch (error) {
-      showToastMessage('Login failed. Please try again.');
+      // Enforce email verification after password sign-in
+      const { data } = await supabase.auth.getUser();
+      const verified = !!data.user?.email_confirmed_at;
+      if (!verified) {
+        try { if (typeof window !== 'undefined') localStorage.setItem('pendingVerifyEmail', loginForm.email); } catch {}
+        await supabase.auth.signOut();
+        toast.info('Please verify your email first. Check your inbox.');
+      } else {
+        toast.success('Login successful!');
+        setTimeout(() => {
+          const next = searchParams?.get('next');
+          try { if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail'); } catch {}
+          router.push(next || '/');
+        }, 800);
+      }
+    } catch (error: any) {
+      const msg = (error?.message || '').toString().toLowerCase();
+      if (msg.includes('confirm') || msg.includes('verify')) {
+        toast.info('Please verify your email first. Check your inbox.');
+      } else {
+        toast.error('Login failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -102,41 +136,40 @@ export default function Login() {
 
     try {
       if (!signupForm.name || !signupForm.email || !signupForm.phone || !signupForm.password) {
-        showToastMessage('Please fill in all required fields');
+        toast.info('Please fill in all required fields');
+        setLoading(false);
+        return;
+      }
+      if (isDisposableEmail(signupForm.email)) {
+        toast.error('Disposable/temporary emails are not allowed. Use a real email.');
         setLoading(false);
         return;
       }
       if (signupForm.password !== signupForm.confirmPassword) {
-        showToastMessage('Passwords do not match');
+        toast.info('Passwords do not match');
         setLoading(false);
         return;
       }
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const { data, error } = await supabase.auth.signUp({
-        email: signupForm.email,
-        password: signupForm.password,
-        options: {
-          data: { name: signupForm.name, phone: signupForm.phone },
-          emailRedirectTo: origin ? `${origin}/auth/callback` : undefined,
-        },
-      });
-      if (error) throw error;
-      const uid = data.user?.id;
-      if (uid) {
-        const avatar = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
-        await supabase.from('profiles').upsert({
-          id: uid,
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           name: signupForm.name,
+          email: signupForm.email,
           phone: signupForm.phone,
-          avatar_url: avatar,
-        });
+          password: signupForm.password,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json?.ok) {
+        toast.error(json?.error || 'Could not create account');
+        setLoading(false);
+        return;
       }
-      showToastMessage('Account created successfully! Welcome to Taliyo! 🎉');
-      setTimeout(() => {
-        router.push('/profile');
-      }, 1500);
+      toast.success(json?.message || 'Check your email to verify your account before signing in.');
+      setIsLogin(true);
     } catch (e) {
-      showToastMessage('Signup failed. Please try again.');
+      toast.error('Signup failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -249,6 +282,12 @@ export default function Login() {
                 <button type="button" onClick={handleResetPassword} className="text-blue-500 text-sm hover:text-blue-600">
                   Forgot your password?
                 </button>
+              </div>
+
+              <div className="mt-3 text-right">
+                <Link href="/verify-email" className="text-blue-500 text-sm hover:text-blue-600">
+                  Didn\'t receive verification email?
+                </Link>
               </div>
 
               <button
@@ -375,19 +414,9 @@ export default function Login() {
               </div>
             </div>
           </form>
-        )}
-
+      )}
 
       </div>
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
-            <span>{toastMessage}</span>
-          </div>
-        </div>
-      )}
 
       <BottomNavigation />
     </div>

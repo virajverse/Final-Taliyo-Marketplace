@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import { useToast } from '@/components/ToastProvider';
 import { 
   User, 
   Settings, 
@@ -14,7 +16,6 @@ import {
   Star,
   Phone,
   Mail,
-  Edit3,
   Camera,
   Bell,
   Shield,
@@ -38,11 +39,9 @@ interface UserData {
 }
 
 export default function Profile() {
-  const { isLoggedIn, user: authUser, logout } = useAuth();
+  const { isLoggedIn, user: authUser, logout, authLoading } = useAuth();
   const [user, setUser] = useState<UserData | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const toast = useToast();
   const [profileLoading, setProfileLoading] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
   const [emailPending, setEmailPending] = useState(false);
@@ -55,7 +54,7 @@ export default function Profile() {
       name: prev?.name || authUser.name || 'User',
       email: authUser.email,
       phone: prev?.phone,
-      avatar: (prev as any)?.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      avatar: (prev as any)?.avatar || 'https://picsum.photos/seed/profile-fallback/150/150',
       joinDate: (prev as any)?.joinDate || new Date().toISOString(),
       stats: prev?.stats || { bookings: 0, favorites: 0, reviews: 0 },
     } as UserData));
@@ -75,7 +74,7 @@ export default function Profile() {
       name: p?.name || authUser.name || 'User',
       email: authUser.email,
       phone: p?.phone,
-      avatar: p?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      avatar: p?.avatar_url || 'https://picsum.photos/seed/profile-fallback/150/150',
       joinDate: p?.created_at || new Date().toISOString(),
       stats: { bookings: 0, favorites: 0, reviews: 0 },
     };
@@ -159,10 +158,18 @@ export default function Profile() {
   }, [authUser?.id]);
 
   // Show toast notification
-  const showToastMessage = (message: string) => {
-    setToastMessage(message);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+  const showToastMessage = (message: string) => { toast.info(message); };
+
+  const resendVerificationEmail = async () => {
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      await supabase.auth.resend({
+        type: 'signup',
+        email: user?.email || '',
+        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined as any,
+      });
+      showToastMessage('Verification email sent');
+    } catch {}
   };
 
   // Handle sign out
@@ -172,13 +179,7 @@ export default function Profile() {
     showToastMessage('Signed out successfully');
   };
 
-  // Handle edit profile
-  const handleEditProfile = () => {
-    if (isEditing) {
-      showToastMessage('Profile updated successfully! ✅');
-    }
-    setIsEditing(!isEditing);
-  };
+  
 
   // Update user data (live). Special handling for email triggers verification email.
   const updateUser = async (field: keyof UserData, value: string) => {
@@ -275,6 +276,21 @@ export default function Profile() {
     },
   ];
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="pt-4 pb-20 px-4">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+            <div className="h-4 bg-gray-200 rounded w-1/3 mb-2 animate-pulse" />
+            <div className="h-3 bg-gray-200 rounded w-1/4 animate-pulse" />
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -342,15 +358,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Toast Notification */}
-        {showToast && (
-          <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-            <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
-              <span>{toastMessage}</span>
-            </div>
-          </div>
-        )}
-
         <BottomNavigation />
       </div>
     );
@@ -376,9 +383,11 @@ export default function Profile() {
           <>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <div className="relative">
-              <img
-                src={user?.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"}
+              <Image
+                src={user?.avatar || "https://picsum.photos/seed/profile-fallback/150/150"}
                 alt="Profile"
+                width={64}
+                height={64}
                 className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow"
               />
               <button className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full shadow hover:bg-blue-600 transition-colors">
@@ -387,55 +396,22 @@ export default function Profile() {
             </div>
             
             <div className="flex-1">
-              {isEditing ? (
-                <div className="space-y-2">
-                  <input
-                    type="text"
-                    value={user?.name || ''}
-                    onChange={(e) => updateUser('name', e.target.value)}
-                    className="text-xl font-bold text-gray-900 bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
-                    placeholder="Your name"
-                  />
-                  <input
-                    type="email"
-                    value={user?.email || ''}
-                    onChange={(e) => updateUser('email', e.target.value)}
-                    className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
-                    placeholder="Your email"
-                  />
-                  <input
-                    type="tel"
-                    value={user?.phone || ''}
-                    onChange={(e) => updateUser('phone', e.target.value)}
-                    className="text-gray-600 text-sm bg-transparent border-b border-gray-300 focus:border-blue-500 outline-none w-full"
-                    placeholder="Your WhatsApp / phone"
-                  />
+              <>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
+                  {emailVerified ? (
+                    <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                      {emailPending ? 'Verification Pending' : 'Not Verified'}
+                      <button type="button" onClick={resendVerificationEmail} className="underline text-blue-700">Send email</button>
+                    </span>
+                  )}
                 </div>
-              ) : (
-                <>
-                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
-                    {emailVerified ? (
-                      <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
-                    ) : (
-                      <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">{emailPending ? 'Verification Pending' : 'Not Verified'}</span>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-
-            <button 
-              onClick={handleEditProfile}
-              className={`absolute top-3 right-3 p-2 rounded-lg transition-colors ${
-                isEditing 
-                  ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              <Edit3 className="w-4 h-4" />
-            </button>
+              </>
+          </div>
+            
           </div>
           </>
           )}
@@ -487,15 +463,6 @@ export default function Profile() {
           <span className="font-medium">Sign Out</span>
         </button>
       </div>
-
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed top-4 left-4 right-4 z-50 flex justify-center">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-bounce">
-            <span>{toastMessage}</span>
-          </div>
-        </div>
-      )}
 
       <BottomNavigation />
     </div>

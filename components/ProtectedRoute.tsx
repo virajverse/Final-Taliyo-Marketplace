@@ -5,10 +5,11 @@ import { useAuth } from '@/lib/AuthContext';
 import { usePathname } from 'next/navigation';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn, redirectToLogin } = useAuth();
+  const { isLoggedIn, redirectToLogin, authLoading } = useAuth();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (authLoading) return;
     // प्रोटेक्टेड पेजेज की लिस्ट
     const protectedPaths = [
       '/cart',
@@ -22,7 +23,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     if (!isLoggedIn && protectedPaths.some(path => pathname.startsWith(path))) {
       redirectToLogin();
     }
-  }, [isLoggedIn, pathname, redirectToLogin]);
+  }, [isLoggedIn, authLoading, pathname, redirectToLogin]);
 
   return <>{children}</>;
 }

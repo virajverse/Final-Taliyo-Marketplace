@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useToast } from '@/components/ToastProvider';
 import { supabase } from '@/lib/supabaseClient';
 
 interface Service {
@@ -22,6 +23,7 @@ interface BookingModalProps {
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service }) => {
   const { isLoggedIn, redirectToLogin, user } = useAuth();
+  const toast = useToast();
   const [form, setForm] = useState({
     fullName: '',
     phone: '',
@@ -170,6 +172,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
     e.preventDefault();
     setServerError('');
     setServerSuccess('');
+    if (!isLoggedIn) {
+      setServerError('Please sign in and verify your email before submitting a booking.');
+      try { redirectToLogin?.(); } catch {}
+      try { toast.info('Please sign in and verify your email.'); } catch {}
+      return;
+    }
     if (!validate()) return;
 
     try {
@@ -241,7 +249,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       if (!res.ok) {
         throw new Error(data?.error || 'Failed to submit booking');
       }
-      setServerSuccess('Your order has been submitted successfully!');
+      setServerSuccess('Order submitted successfully! We will contact you soon.');
+      try { toast.success('Booking submitted successfully'); } catch {}
       // Optionally reset
       setForm({ fullName: '', phone: '', email: '', whatsappNumber: '', requirements: '', budgetRange: '', deliveryPreference: '', additionalNotes: '' });
       setFiles([]);
@@ -249,6 +258,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
       setTimeout(onClose, 1200);
     } catch (err: any) {
       setServerError(err?.message || 'Something went wrong');
+      try { toast.error(err?.message || 'Booking failed'); } catch {}
     } finally {
       setSubmitting(false);
     }
@@ -450,7 +460,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
           <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-gray-200 bg-white shadow-[0_-1px_8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
-              <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
+              <button type="submit" disabled={submitting || !isLoggedIn} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
                 {submitting ? 'Submitting...' : 'Submit Order'}
               </button>
             </div>

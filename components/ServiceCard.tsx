@@ -3,6 +3,8 @@
 import { Star, Clock, Heart } from 'lucide-react';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import BookingModal from './BookingModal';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -44,7 +46,7 @@ export default function ServiceCard({
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { isLoggedIn, redirectToLogin } = useAuth();
   const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
-  const primaryImage = images[0] || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop';
+  const primaryImage = images[0] || 'https://picsum.photos/seed/service-card-fallback/400/300';
 
   const formatPrice = () => {
     if (service.price_min && service.price_max) {
@@ -126,9 +128,12 @@ export default function ServiceCard({
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200">
         <div className="relative">
           <Link href={`/services/${service.id}`} className="block">
-            <img
-              src={imageError ? 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=400&h=300&fit=crop' : primaryImage}
+            <Image
+              src={imageError ? 'https://picsum.photos/seed/service-card-error/400/300' : primaryImage}
               alt={service.title}
+              width={800}
+              height={600}
+              loader={isSupabaseUrl(imageError ? undefined : primaryImage) ? supabaseImageLoader : undefined}
               onError={() => setImageError(true)}
               className="w-full h-40 object-cover"
             />
@@ -160,9 +165,12 @@ export default function ServiceCard({
 
           {service.provider_name && (
             <div className="flex items-center gap-2 mb-3">
-              <img
-                src={service.provider_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face'}
-                alt={service.provider_name}
+              <Image
+                src={service.provider_avatar || 'https://picsum.photos/seed/provider-avatar/40/40'}
+                alt={service.provider_name || 'Provider avatar'}
+                width={24}
+                height={24}
+                loader={isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined}
                 className="w-6 h-6 rounded-full object-cover"
               />
               <span className="text-xs text-gray-600">by {service.provider_name}</span>

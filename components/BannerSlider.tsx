@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from 'next/image';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import { supabase } from "@/lib/supabaseClient";
 import { MessageCircle } from "lucide-react";
 
@@ -148,7 +150,7 @@ export default function BannerSlider() {
                   preload="metadata"
                 />
               ) : b.image_url ? (
-                <img src={b.image_url} alt="banner" className="absolute inset-0 w-full h-full object-cover" />
+                <Image src={b.image_url} alt="banner" fill loader={isSupabaseUrl(b.image_url) ? supabaseImageLoader : undefined} className="object-cover" />
               ) : null}
               <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${Math.min(0.6, Math.max(0, Number(b.overlay_opacity ?? 0.1)))})` }} />
               {b.cta_text ? (

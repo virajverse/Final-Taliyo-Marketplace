@@ -1,9 +1,10 @@
 'use client';
 
 import { Search, ShoppingCart, Menu, X, Home, Grid3X3, Heart, Clock, User, HelpCircle, Phone } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PWAInstallBridge from './PWAInstallBridge';
+import { supabase } from '@/lib/supabaseClient';
 
 interface HeaderProps {
   cartCount?: number;
@@ -12,6 +13,9 @@ interface HeaderProps {
 export default function Header({ cartCount = 0 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [verify, setVerify] = useState<{ show: boolean; email: string }>({ show: false, email: '' });
+  const [sending, setSending] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState('');
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -19,6 +23,61 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const email = typeof window !== 'undefined' ? (localStorage.getItem('pendingVerifyEmail') || '') : '';
+        const dismissed = typeof window !== 'undefined' ? (localStorage.getItem('dismissVerifyBanner') === '1') : false;
+        // If user is verified, clear banner keys
+        const { data } = await supabase.auth.getUser();
+        const verified = !!data.user?.email_confirmed_at;
+        if (verified) {
+          try {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('pendingVerifyEmail');
+              localStorage.removeItem('dismissVerifyBanner');
+            }
+          } catch {}
+          if (mounted) setVerify({ show: false, email: '' });
+          return;
+        }
+        if (mounted && email && !dismissed) setVerify({ show: true, email });
+      } catch {}
+    })();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'pendingVerifyEmail' && !e.newValue) setVerify(v => ({ ...v, show: false, email: '' }));
+    };
+    if (typeof window !== 'undefined') window.addEventListener('storage', onStorage);
+    return () => {
+      mounted = false;
+      if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
+  const resendVerify = async () => {
+    try {
+      setSending(true);
+      setVerifyMsg('');
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      await supabase.auth.resend({
+        type: 'signup',
+        email: verify.email,
+        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined as any,
+      });
+      setVerifyMsg('Verification email sent');
+    } catch {
+      setVerifyMsg('Failed to send');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const dismissVerify = () => {
+    try { if (typeof window !== 'undefined') localStorage.setItem('dismissVerifyBanner', '1'); } catch {}
+    setVerify(v => ({ ...v, show: false }));
   };
 
   const menuItems = [
@@ -83,6 +142,24 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           <PWAInstallBridge />
         </div>
       </div>
+
+      {verify.show && (
+        <div className="px-4 pb-3 -mt-2">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center justify-between">
+            <div className="text-xs text-yellow-800">
+              <span className="font-medium">Email unverified.</span> Check your inbox {verify.email ? `(${verify.email})` : ''}.
+              <Link href="/verify-email" className="ml-2 text-blue-700 hover:underline">Verify page</Link>
+              {verifyMsg && <span className="ml-2">{verifyMsg}</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <button onClick={resendVerify} disabled={sending} className="text-xs text-blue-700 hover:underline">
+                {sending ? 'Sending…' : 'Resend'}
+              </button>
+              <button onClick={dismissVerify} className="text-xs text-gray-600 hover:underline">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sidebar Menu */}
       {isMenuOpen && (

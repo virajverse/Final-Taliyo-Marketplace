@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
-import { Heart, ShoppingCart, Share2 } from 'lucide-react';
+import { Heart, ShoppingCart, Share2, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -37,6 +37,7 @@ export default function Wishlist() {
   const { user } = useAuth();
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
   const fetchWishlist = async () => {
     if (!user?.id) {
@@ -46,6 +47,7 @@ export default function Wishlist() {
     }
     try {
       setLoading(true);
+      setError('');
       const { data } = await supabase
         .from('wishlists')
         .select('created_at, service:services(*)')
@@ -61,6 +63,7 @@ export default function Wishlist() {
       setWishlistItems(items);
     } catch (e) {
       setWishlistItems([]);
+      setError('Failed to load wishlist. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -110,6 +113,28 @@ export default function Wishlist() {
       window.open(whatsappUrl, '_blank');
     }
   };
+
+  if (!loading && error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="pt-8 pb-20 px-4">
+          <div className="text-center py-16">
+            <AlertCircle className="w-24 h-24 text-red-300 mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+            <p className="text-gray-600 mb-8">{error}</p>
+            <button 
+              onClick={fetchWishlist}
+              className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
 
   if (!loading && wishlistItems.length === 0) {
     return (

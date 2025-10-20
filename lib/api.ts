@@ -152,13 +152,13 @@ const mockServices: Service[] = [
     location: 'Delhi NCR',
     is_remote: true,
     images: [
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-1a/800/600',
+      'https://picsum.photos/seed/service-1b/800/600'
     ],
     rating_average: 4.8,
     rating_count: 124,
     provider_name: 'Tech Solutions',
-    provider_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-1/100/100',
     provider_bio: 'Professional web development team with 5+ years of experience',
     provider_phone: '+917042523611',
     provider_verified: true,
@@ -180,12 +180,12 @@ const mockServices: Service[] = [
     location: 'Mumbai',
     is_remote: true,
     images: [
-      'https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-2a/800/600'
     ],
     rating_average: 4.9,
     rating_count: 89,
     provider_name: 'Mobile Experts',
-    provider_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-2/100/100',
     provider_bio: 'Specialized in React Native and Flutter development',
     provider_phone: '+917042523611',
     provider_verified: true,
@@ -207,12 +207,12 @@ const mockServices: Service[] = [
     location: 'Bangalore',
     is_remote: true,
     images: [
-      'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-3a/800/600'
     ],
     rating_average: 4.7,
     rating_count: 156,
     provider_name: 'Digital Growth',
-    provider_avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-3/100/100',
     provider_bio: 'Digital marketing agency with proven track record',
     provider_phone: '+917042523611',
     provider_verified: true,
@@ -234,12 +234,12 @@ const mockServices: Service[] = [
     location: 'Pune',
     is_remote: true,
     images: [
-      'https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-4a/800/600'
     ],
     rating_average: 4.6,
     rating_count: 78,
     provider_name: 'Creative Studio',
-    provider_avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-4/100/100',
     provider_bio: 'Creative design studio specializing in brand identity',
     provider_phone: '+917042523611',
     provider_verified: true,
@@ -261,12 +261,12 @@ const mockServices: Service[] = [
     location: 'Delhi NCR',
     is_remote: false,
     images: [
-      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-5a/800/600'
     ],
     rating_average: 4.5,
     rating_count: 203,
     provider_name: 'CleanPro Services',
-    provider_avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-5/100/100',
     provider_bio: 'Professional cleaning services for homes and offices',
     provider_phone: '+917042523611',
     provider_verified: true,
@@ -288,12 +288,12 @@ const mockServices: Service[] = [
     location: 'Mumbai',
     is_remote: true,
     images: [
-      'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=600&fit=crop'
+      'https://picsum.photos/seed/service-6a/800/600'
     ],
     rating_average: 4.9,
     rating_count: 145,
     provider_name: 'EduExperts',
-    provider_avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
+    provider_avatar: 'https://picsum.photos/seed/provider-6/100/100',
     provider_bio: 'Experienced educators with proven teaching methods',
     provider_phone: '+917042523611',
     provider_verified: true,

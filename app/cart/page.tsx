@@ -6,6 +6,8 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { ShoppingCart, Trash2, Plus, Minus, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import BookingModal from '@/components/BookingModal';
 import OrderProceedModal from '@/components/OrderProceedModal';
 
@@ -109,9 +111,12 @@ export default function Cart() {
           {cartItems.map((item) => (
             <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
               <div className="flex gap-4">
-                <img
-                  src={item.images || 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop'}
+                <Image
+                  src={item.images || 'https://picsum.photos/seed/cart-item/400/300'}
                   alt={item.title}
+                  width={80}
+                  height={80}
+                  loader={isSupabaseUrl(item.images || '') ? supabaseImageLoader : undefined}
                   className="w-20 h-20 rounded-xl object-cover"
                 />
                 

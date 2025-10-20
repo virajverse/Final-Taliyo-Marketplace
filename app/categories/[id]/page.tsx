@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import ServiceCard from '@/components/ServiceCard';
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft, Package, AlertCircle } from 'lucide-react';
 import IconMapper from '@/components/IconMapper';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
@@ -52,6 +52,7 @@ export default function CategoryDetail() {
   const [category, setCategory] = useState<Category | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -87,6 +88,8 @@ export default function CategoryDetail() {
 
   const fetchCategoryData = async () => {
     try {
+      setLoading(true);
+      setError('');
       const [{ data: cat, error: catErr }, { data: svc, error: svcErr }] = await Promise.all([
         supabase.from('categories').select('*').eq('id', params.id as string).single(),
         supabase
@@ -104,6 +107,7 @@ export default function CategoryDetail() {
       console.error('Failed to fetch category data:', error);
       setCategory(null);
       setServices([]);
+      setError('Failed to load category. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -146,6 +150,26 @@ export default function CategoryDetail() {
               ))}
             </div>
           </div>
+        </div>
+        <BottomNavigation />
+      </div>
+    );
+  }
+
+  if (!loading && error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="pt-8 pb-20 px-4 text-center">
+          <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={fetchCategoryData}
+            className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
+          >
+            Retry
+          </button>
         </div>
         <BottomNavigation />
       </div>
@@ -217,7 +241,13 @@ export default function CategoryDetail() {
             <div className="text-center py-12">
               <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">No Services Available</h3>
-              <p className="text-gray-600">Services in this category will appear here soon.</p>
+              <p className="text-gray-600 mb-4">Services in this category will appear here soon.</p>
+              <button
+                onClick={() => router.push('/categories')}
+                className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
+              >
+                Explore Categories
+              </button>
             </div>
           ) : (
             <div className="space-y-4">

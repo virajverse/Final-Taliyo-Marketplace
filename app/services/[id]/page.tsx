@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
@@ -209,10 +211,12 @@ export default function ServiceDetail() {
         {/* Image Gallery */}
         <div className="mb-6">
           <div className="relative h-64 bg-gray-200">
-            <img
+            <Image
               src={images[selectedImage] || images[0]}
               alt={service.title}
-              className="w-full h-full object-cover"
+              fill
+              loader={isSupabaseUrl(images[selectedImage] || images[0]) ? supabaseImageLoader : undefined}
+              className="object-cover"
             />
           </div>
           {images.length > 1 && (
@@ -225,7 +229,7 @@ export default function ServiceDetail() {
                     selectedImage === idx ? 'border-blue-500' : 'border-gray-200'
                   }`}
                 >
-                  <img src={img} alt={`${service.title} ${idx + 1}`} className="w-full h-full object-cover" />
+                  <Image src={img} alt={`${service.title} ${idx + 1}`} width={64} height={64} loader={isSupabaseUrl(img) ? supabaseImageLoader : undefined} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
@@ -275,9 +279,12 @@ export default function ServiceDetail() {
               <h3 className="font-semibold text-gray-900 mb-4">Service Provider</h3>
               
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <img
-                  src={service.provider_avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop'}
-                  alt={service.provider_name}
+                <Image
+                  src={service.provider_avatar || 'https://picsum.photos/seed/provider-avatar/60/60'}
+                  alt={service.provider_name || 'Provider avatar'}
+                  width={48}
+                  height={48}
+                  loader={isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined}
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div className="flex-1">

@@ -40,6 +40,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!mounted) return;
       if (session?.user) {
+        const isVerified = !!session.user.email_confirmed_at;
+        const isBlocked = !!(session.user.app_metadata as any)?.blocked;
         const suser = session.user;
         const uBase: User = {
           id: suser.id,
@@ -47,13 +49,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: suser.email || undefined,
         };
         setUser(uBase);
-        setIsLoggedIn(true);
+        setIsLoggedIn(isVerified && !isBlocked);
         setAuthLoading(false);
         if (typeof document !== 'undefined') {
-          try { document.cookie = 'taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax'; } catch {}
+          try {
+            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            document.cookie = (isVerified && !isBlocked)
+              ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
+              : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+          } catch {}
         }
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
+        }
+        if (!isVerified || isBlocked) {
+          try { await supabase.auth.signOut(); } catch {}
+          return;
         }
         (async () => {
           const { data: profile } = await supabase
@@ -86,7 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const now = Date.now();
             const last = Number(localStorage.getItem('lastLoginLoggedAt') || '0');
-            if (!last || now - last > 6 * 60 * 60 * 1000) {
+            if (isVerified && !isBlocked && (!last || now - last > 6 * 60 * 60 * 1000)) {
               await fetch('/api/user/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -101,7 +112,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsLoggedIn(false);
         setAuthLoading(false);
         if (typeof document !== 'undefined') {
-          try { document.cookie = 'taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax'; } catch {}
+          try {
+            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+          } catch {}
         }
       }
     };
@@ -109,6 +123,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
+        const isVerified = !!session.user.email_confirmed_at;
+        const isBlocked = !!(session.user.app_metadata as any)?.blocked;
         const suser = session.user;
         const uBase: User = {
           id: suser.id,
@@ -116,10 +132,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: suser.email || undefined,
         };
         setUser(uBase);
-        setIsLoggedIn(true);
+        setIsLoggedIn(isVerified && !isBlocked);
         setAuthLoading(true);
         if (typeof document !== 'undefined') {
-          try { document.cookie = 'taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax'; } catch {}
+          try {
+            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            document.cookie = (isVerified && !isBlocked)
+              ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
+              : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+          } catch {}
         }
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
@@ -151,7 +172,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
           } catch {}
           // On explicit sign-in, log login event
-          if (event === 'SIGNED_IN') {
+          if (event === 'SIGNED_IN' && isVerified && !isBlocked) {
             try {
               const now = Date.now();
               const last = Number(localStorage.getItem('lastLoginLoggedAt') || '0');
@@ -166,11 +187,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } catch {}
           }
           setAuthLoading(false);
+          // If signed in without verification, immediately sign out to enforce policy
+          if ((!isVerified || isBlocked) && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+            try { await supabase.auth.signOut(); } catch {}
+            setIsLoggedIn(false);
+          }
         })();
       } else {
         setUser(null);
         setIsLoggedIn(false);
         setAuthLoading(false);
+        if (typeof document !== 'undefined') {
+          try {
+            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+          } catch {}
+        }
       }
     });
     return () => {
@@ -186,12 +218,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     await supabase.auth.signOut();
+    if (typeof document !== 'undefined') {
+      try {
+        const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+        document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+      } catch {}
+    }
     setIsLoggedIn(false);
     setUser(null);
     router.push('/');
   };
 
   const redirectToLogin = () => {
+    try {
+      const href = typeof window !== 'undefined' ? window.location.href : '';
+      if (href) {
+        const url = new URL(href);
+        const next = url.pathname + (url.search || '');
+        router.push(`/login?next=${encodeURIComponent(next)}`);
+        return;
+      }
+    } catch {}
     router.push('/login');
   };
 

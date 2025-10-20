@@ -70,14 +70,29 @@ export async function POST(request: NextRequest) {
     }
     const formData = await request.formData();
     let authUserId: string | null = null;
+    let emailConfirmed = false;
     try {
       const authHeader = request.headers.get('authorization') || '';
       const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
       if (token) {
         const { data: ures } = await (supabase as any).auth.getUser(token);
         authUserId = ures?.user?.id || null;
+        emailConfirmed = !!ures?.user?.email_confirmed_at;
       }
     } catch {}
+    // Enforce: must be signed in AND verified
+    if (!authUserId) {
+      return NextResponse.json(
+        { error: 'Please sign in to place an order' },
+        { status: 401 }
+      );
+    }
+    if (!emailConfirmed) {
+      return NextResponse.json(
+        { error: 'Please verify your email before placing an order' },
+        { status: 403 }
+      );
+    }
     
     // Extract form fields
     // Accept non-UUID serviceId by coercing to null (e.g., cart orders)

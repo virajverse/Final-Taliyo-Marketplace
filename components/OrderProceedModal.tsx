@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
+import { useToast } from '@/components/ToastProvider';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -12,8 +13,9 @@ interface OrderProceedModalProps {
 }
 
 export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModalProps) {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn, user, redirectToLogin } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const [form, setForm] = useState({
     fullName: '',
     email: '',
@@ -81,6 +83,12 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
     e.preventDefault();
     setServerError('');
     setServerSuccess('');
+    if (!isLoggedIn) {
+      setServerError('Please sign in and verify your email before placing an order.');
+      try { redirectToLogin?.(); } catch {}
+      try { toast.info('Please sign in and verify your email.'); } catch {}
+      return;
+    }
     if (!validate()) return;
 
     try {
@@ -111,6 +119,7 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || 'Failed to submit order');
       setServerSuccess('Order submitted successfully!');
+      try { toast.success('Order submitted successfully'); } catch {}
       const bookingId = data?.booking?.id || data?.id;
       if (bookingId) {
         try { localStorage.removeItem('cart'); } catch {}
@@ -120,6 +129,7 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
       }
     } catch (err: any) {
       setServerError(err?.message || 'Something went wrong');
+      try { toast.error(err?.message || 'Order submission failed'); } catch {}
     } finally {
       setSubmitting(false);
     }
@@ -219,7 +229,7 @@ export default function OrderProceedModal({ isOpen, onClose }: OrderProceedModal
           <div className="sticky bottom-0 z-10 px-6 py-4 border-t border-gray-200 bg-white shadow-[0_-1px_8px_rgba(0,0,0,0.08)]" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 w-full sm:w-auto">Cancel</button>
-              <button type="submit" disabled={submitting} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
+              <button type="submit" disabled={submitting || !isLoggedIn} className="px-5 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-70 w-full sm:w-auto">
                 {submitting ? 'Submitting...' : 'Place Order'}
               </button>
             </div>

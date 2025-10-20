@@ -1,7 +1,10 @@
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/lib/AuthContext';
+import { ToastProvider } from '@/components/ToastProvider';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import Analytics from '@/components/Analytics';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -27,11 +30,52 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="https://placehold.co/180x180/png" />
       </head>
       <body className={`no-scrollbar overflow-x-hidden ${inter.className}`}>
-        <AuthProvider>
-          <ProtectedRoute>
-            {children}
-          </ProtectedRoute>
-        </AuthProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <ProtectedRoute>
+              {children}
+            </ProtectedRoute>
+          </AuthProvider>
+        </ToastProvider>
+        {process.env.NEXT_PUBLIC_GA_ID ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);} 
+  gtag('js', new Date());
+  gtag('config', '${process.env.NEXT_PUBLIC_GA_ID}', { page_path: window.location.pathname });
+              `}
+            </Script>
+            <Analytics id={process.env.NEXT_PUBLIC_GA_ID} />
+          </>
+        ) : null}
+
+        {process.env.NEXT_PUBLIC_SENTRY_DSN ? (
+          <>
+            <Script
+              src="https://browser.sentry-cdn.com/7.114.0/bundle.tracing.min.js"
+              strategy="afterInteractive"
+              crossOrigin="anonymous"
+            />
+            <Script id="sentry-init" strategy="afterInteractive">
+              {`
+  try {
+    if (typeof Sentry !== 'undefined') {
+      Sentry.init({
+        dsn: '${process.env.NEXT_PUBLIC_SENTRY_DSN}',
+        tracesSampleRate: 0.1
+      });
+    }
+  } catch {}
+              `}
+            </Script>
+          </>
+        ) : null}
         <script
           dangerouslySetInnerHTML={{
             __html: `(() => {
