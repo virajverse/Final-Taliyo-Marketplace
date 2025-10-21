@@ -12,7 +12,6 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     if (authLoading) return;
     // प्रोटेक्टेड पेजेज की लिस्ट
     const protectedPaths = [
-      '/cart',
       '/wishlist',
       '/profile',
       '/orders',
