@@ -15,7 +15,9 @@ export default function ResetPassword() {
 
   useEffect(() => {
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         setMessage('Your reset link is invalid or expired. Please request a new one.');
       }
@@ -51,7 +53,10 @@ export default function ResetPassword() {
       <div className="pt-8 pb-20 px-4 max-w-md mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-4">Reset Password</h1>
         <p className="text-gray-600 mb-6">Enter your new password below.</p>
-        <form onSubmit={submit} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 space-y-4">
+        <form
+          onSubmit={submit}
+          className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 space-y-4"
+        >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
             <input
@@ -81,9 +86,7 @@ export default function ResetPassword() {
           >
             {loading ? 'Updating...' : 'Update Password'}
           </button>
-          {message && (
-            <div className="text-sm text-gray-700 mt-2">{message}</div>
-          )}
+          {message && <div className="text-sm text-gray-700 mt-2">{message}</div>}
         </form>
       </div>
       <BottomNavigation />

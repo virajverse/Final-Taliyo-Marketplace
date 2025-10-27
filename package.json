@@ -2,6 +2,7 @@
   "name": "taliyo-marketplace",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "pnpm@9.0.0",
   "dependencies": {
     "@supabase/supabase-js": "^2.74.0",
     "chart.js": "^4.5.1",

@@ -37,7 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     let mounted = true;
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!mounted) return;
       if (session?.user) {
         const isVerified = !!session.user.email_confirmed_at;
@@ -53,17 +55,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthLoading(false);
         if (typeof document !== 'undefined') {
           try {
-            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
-            document.cookie = (isVerified && !isBlocked)
-              ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
-              : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+            const secure =
+              typeof window !== 'undefined' && window.location.protocol === 'https:'
+                ? '; Secure'
+                : '';
+            document.cookie =
+              isVerified && !isBlocked
+                ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
+                : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           } catch {}
         }
         if (typeof window !== 'undefined' && uBase.email) {
           localStorage.setItem('userData', JSON.stringify({ email: uBase.email }));
         }
         if (!isVerified || isBlocked) {
-          try { await supabase.auth.signOut(); } catch {}
+          try {
+            await supabase.auth.signOut();
+          } catch {}
           return;
         }
         (async () => {
@@ -73,23 +81,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .eq('id', suser.id)
             .maybeSingle();
           if (!mounted) return;
-          setUser(prev => ({
-            id: uBase.id,
-            name: profile?.name || prev?.name,
-            email: uBase.email,
-            phone: profile?.phone,
-            avatar_url: profile?.avatar_url,
-          } as User));
+          setUser(
+            (prev) =>
+              ({
+                id: uBase.id,
+                name: profile?.name || prev?.name,
+                email: uBase.email,
+                phone: profile?.phone,
+                avatar_url: profile?.avatar_url,
+              }) as User,
+          );
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
           }
           try {
-            const did = typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
+            const did =
+              typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
             if (did && uBase.id) {
               await fetch('/api/pwa-installs/map-user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ device_id: did, user_id: uBase.id, user_email: uBase.email || null })
+                body: JSON.stringify({
+                  device_id: did,
+                  user_id: uBase.id,
+                  user_email: uBase.email || null,
+                }),
               });
             }
           } catch {}
@@ -101,7 +117,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               await fetch('/api/user/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: uBase.id, email: uBase.email, phone: profile?.phone })
+                body: JSON.stringify({
+                  userId: uBase.id,
+                  email: uBase.email,
+                  phone: profile?.phone,
+                }),
               });
               localStorage.setItem('lastLoginLoggedAt', String(now));
             }
@@ -113,7 +133,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthLoading(false);
         if (typeof document !== 'undefined') {
           try {
-            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            const secure =
+              typeof window !== 'undefined' && window.location.protocol === 'https:'
+                ? '; Secure'
+                : '';
             document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           } catch {}
         }
@@ -136,10 +159,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthLoading(true);
         if (typeof document !== 'undefined') {
           try {
-            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
-            document.cookie = (isVerified && !isBlocked)
-              ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
-              : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+            const secure =
+              typeof window !== 'undefined' && window.location.protocol === 'https:'
+                ? '; Secure'
+                : '';
+            document.cookie =
+              isVerified && !isBlocked
+                ? `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`
+                : `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           } catch {}
         }
         if (typeof window !== 'undefined' && uBase.email) {
@@ -151,23 +178,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .select('id,name,phone,avatar_url')
             .eq('id', suser.id)
             .maybeSingle();
-          setUser(prev => ({
-            id: uBase.id,
-            name: profile?.name || prev?.name,
-            email: uBase.email,
-            phone: profile?.phone,
-            avatar_url: profile?.avatar_url,
-          } as User));
+          setUser(
+            (prev) =>
+              ({
+                id: uBase.id,
+                name: profile?.name || prev?.name,
+                email: uBase.email,
+                phone: profile?.phone,
+                avatar_url: profile?.avatar_url,
+              }) as User,
+          );
           if (typeof window !== 'undefined' && profile?.phone) {
             localStorage.setItem('userPhone', profile.phone);
           }
           try {
-            const did = typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
+            const did =
+              typeof window !== 'undefined' ? localStorage.getItem('pwa_device_id') : null;
             if (did && uBase.id) {
               await fetch('/api/pwa-installs/map-user', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ device_id: did, user_id: uBase.id, user_email: uBase.email || null })
+                body: JSON.stringify({
+                  device_id: did,
+                  user_id: uBase.id,
+                  user_email: uBase.email || null,
+                }),
               });
             }
           } catch {}
@@ -180,7 +215,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 await fetch('/api/user/login', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ userId: uBase.id, email: uBase.email, phone: profile?.phone })
+                  body: JSON.stringify({
+                    userId: uBase.id,
+                    email: uBase.email,
+                    phone: profile?.phone,
+                  }),
                 });
                 localStorage.setItem('lastLoginLoggedAt', String(now));
               }
@@ -188,8 +227,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           setAuthLoading(false);
           // If signed in without verification, immediately sign out to enforce policy
-          if ((!isVerified || isBlocked) && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-            try { await supabase.auth.signOut(); } catch {}
+          if (
+            (!isVerified || isBlocked) &&
+            (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')
+          ) {
+            try {
+              await supabase.auth.signOut();
+            } catch {}
             setIsLoggedIn(false);
           }
         })();
@@ -199,7 +243,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setAuthLoading(false);
         if (typeof document !== 'undefined') {
           try {
-            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            const secure =
+              typeof window !== 'undefined' && window.location.protocol === 'https:'
+                ? '; Secure'
+                : '';
             document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
           } catch {}
         }
@@ -220,7 +267,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     if (typeof document !== 'undefined') {
       try {
-        const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+        const secure =
+          typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
         document.cookie = `taliyo_auth=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
       } catch {}
     }
@@ -248,16 +296,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isLoggedIn, 
-      user, 
-      isAuthenticated,
-      authLoading,
-      login, 
-      logout, 
-      redirectToLogin,
-      showLoginModal
-    }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        isAuthenticated,
+        authLoading,
+        login,
+        logout,
+        redirectToLogin,
+        showLoginModal,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

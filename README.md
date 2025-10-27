@@ -10,6 +10,7 @@
 ---
 
 ## 📚 Table of Contents
+
 1. [Overview](#-overview)
 2. [Screenshots & Demo](#-screenshots--demo)
 3. [Core Features](#-core-features)
@@ -25,9 +26,11 @@
 ---
 
 ## ✨ Overview
+
 Taliyo Marketplace is a full-stack platform that blends a customer-facing storefront with a secure operations dashboard. Shoppers get a delightful browsing and booking experience, while admins orchestrate inventory, campaigns, and analytics with confidence.
 
 **What makes it special?**
+
 - Lightning-fast search, curated categories, and WhatsApp bookings out of the box.
 - Modular design system built with Tailwind CSS + motion micro-interactions.
 - Secure admin APIs powered by Supabase with row-level security and audit trails.
@@ -35,8 +38,9 @@ Taliyo Marketplace is a full-stack platform that blends a customer-facing storef
 ---
 
 ## 🖼 Screenshots & Demo
-| Hero Landing | Service Detail | Checkout (WhatsApp) |
-|--------------|----------------|----------------------|
+
+| Hero Landing            | Service Detail             | Checkout (WhatsApp)         |
+| ----------------------- | -------------------------- | --------------------------- |
 | _Add `./docs/hero.png`_ | _Add `./docs/service.png`_ | _Add `./docs/checkout.png`_ |
 
 - **Live Demo:** _Add your deployment URL here_
@@ -45,6 +49,7 @@ Taliyo Marketplace is a full-stack platform that blends a customer-facing storef
 ---
 
 ## 🧭 Core Features
+
 - 🛍️ **Marketplace Frontend** — Browse curated categories, add to cart, and chat-to-book.
 - 📱 **Mobile-first UI** — Optimized navigation, bottom tabs, and quick actions for touch users.
 - 💬 **WhatsApp Booking Flow** — One-tap checkout that launches a personalized WhatsApp thread.
@@ -54,6 +59,7 @@ Taliyo Marketplace is a full-stack platform that blends a customer-facing storef
 ---
 
 ## ⚙️ Tech Stack
+
 - ⚡ **App Framework:** ![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)
 - 💡 **Language:** ![TypeScript](https://img.shields.io/badge/TypeScript-3178c6?logo=typescript&logoColor=white)
 - 🎨 **Styling:** ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-38bdf8?logo=tailwind-css&logoColor=white)
@@ -64,6 +70,7 @@ Taliyo Marketplace is a full-stack platform that blends a customer-facing storef
 ---
 
 ## 🛠 Installation
+
 ```bash
 # Clone the mono-repo
 git clone https://github.com/virajverse/Final-Taliyo-Marketplace.git
@@ -90,17 +97,20 @@ cd admin-panel && pnpm dev   # admin console (port 3001)
 ---
 
 ## 🚀 Usage
+
 - **Consumer storefront:** `http://localhost:3000`
 - **Admin console:** `http://localhost:3001`
 - **Default admin login:** `admin@taliyo.com` / `admin123`
 
 ### Production build
+
 ```bash
 pnpm build && pnpm start        # storefront
 cd admin-panel && pnpm build && pnpm start
 ```
 
 ### Linting
+
 ```bash
 pnpm lint
 cd admin-panel && pnpm lint
@@ -109,6 +119,7 @@ cd admin-panel && pnpm lint
 ---
 
 ## 🌟 Feature Highlights
+
 - ✔️ **Personalized landing pages** with dynamic hero, trending categories, and testimonials.
 - ✔️ **Advanced search** supporting filters, tags, and real-time results.
 - ✔️ **Wishlist, cart, and order history** tied to Supabase profiles.
@@ -119,6 +130,7 @@ cd admin-panel && pnpm lint
 ---
 
 ## 🗂 Folder Structure
+
 ```
 Taliyo Marketplace (1)/
 ├── app/                  # Next.js App Router pages for storefront
@@ -136,7 +148,9 @@ Taliyo Marketplace (1)/
 ---
 
 ## 🤝 Contributing
+
 We’re excited to collaborate! To contribute:
+
 1. **Fork** the repository
 2. **Create a feature branch:** `git checkout -b feature/your-idea`
 3. **Commit changes:** `git commit -m "feat: add your idea"`
@@ -147,6 +161,7 @@ Include screenshots or demo clips for UI changes. For major work, open an issue 
 ---
 
 ## 📜 License
+
 ![License](https://img.shields.io/badge/license-MIT-22c55e?style=for-the-badge)
 
 This project ships under the MIT License. See [`LICENSE`](./LICENSE) for details.
@@ -154,8 +169,9 @@ This project ships under the MIT License. See [`LICENSE`](./LICENSE) for details
 ---
 
 ## 🧑‍🚀 Team & Contact
-| Role | Name | GitHub | LinkedIn | Website |
-|------|------|--------|----------|---------|
+
+| Role                  | Name  | GitHub                                       | LinkedIn                                            | Website                                |
+| --------------------- | ----- | -------------------------------------------- | --------------------------------------------------- | -------------------------------------- |
 | Product & Engineering | Viraj | [@virajverse](https://github.com/virajverse) | [LinkedIn](https://www.linkedin.com/in/virajverse/) | [www.viraj.dev](https://www.viraj.dev) |
 
 Need a hand? Raise an issue or reach us at `team@taliyo.com`.

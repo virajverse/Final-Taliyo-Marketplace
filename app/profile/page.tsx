@@ -8,12 +8,12 @@ import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import { useToast } from '@/components/ToastProvider';
-import { 
-  User, 
-  Settings, 
-  LogOut, 
-  Heart, 
-  Clock, 
+import {
+  User,
+  Settings,
+  LogOut,
+  Heart,
+  Clock,
   Star,
   Phone,
   Mail,
@@ -21,7 +21,7 @@ import {
   Bell,
   Shield,
   HelpCircle,
-  ChevronRight
+  ChevronRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -50,15 +50,18 @@ export default function Profile() {
   const loadProfile = async () => {
     if (!authUser?.id) return;
     // Immediate UI: prime user from auth without waiting for network
-    setUser(prev => ({
-      id: authUser.id,
-      name: prev?.name || authUser.name || 'User',
-      email: authUser.email,
-      phone: prev?.phone,
-      avatar: (prev as any)?.avatar || 'https://picsum.photos/seed/profile-fallback/150/150',
-      joinDate: (prev as any)?.joinDate || new Date().toISOString(),
-      stats: prev?.stats || { bookings: 0, favorites: 0, reviews: 0 },
-    } as UserData));
+    setUser(
+      (prev) =>
+        ({
+          id: authUser.id,
+          name: prev?.name || authUser.name || 'User',
+          email: authUser.email,
+          phone: prev?.phone,
+          avatar: (prev as any)?.avatar || 'https://picsum.photos/seed/profile-fallback/150/150',
+          joinDate: (prev as any)?.joinDate || new Date().toISOString(),
+          stats: prev?.stats || { bookings: 0, favorites: 0, reviews: 0 },
+        }) as UserData,
+    );
     // Load profile row
     setProfileLoading(true);
     let p: any | null = null;
@@ -87,9 +90,7 @@ export default function Profile() {
     // Bookings count
     let bookingsCount = 0;
     try {
-      let qb = supabase
-        .from('bookings')
-        .select('id', { count: 'exact', head: true });
+      let qb = supabase.from('bookings').select('id', { count: 'exact', head: true });
       if (email) {
         qb = qb.or(`customer_email.eq.${email},email.eq.${email}`);
       } else {
@@ -118,7 +119,7 @@ export default function Profile() {
         .or(`customer_email.eq.${email},email.eq.${email}`)
         .order('created_at', { ascending: false })
         .limit(1000);
-      const ids = (bIds || []).map(b => b.id);
+      const ids = (bIds || []).map((b) => b.id);
       if (ids.length > 0) {
         const { count: rcount } = await supabase
           .from('reviews')
@@ -129,7 +130,9 @@ export default function Profile() {
       }
     } catch {}
 
-    setUser(prev => prev ? { ...prev, stats: { bookings: bookingsCount, favorites, reviews } } : prev);
+    setUser((prev) =>
+      prev ? { ...prev, stats: { bookings: bookingsCount, favorites, reviews } } : prev,
+    );
   };
 
   useEffect(() => {
@@ -153,13 +156,21 @@ export default function Profile() {
     if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase
       .channel('profile_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${authUser.id}` }, () => loadProfile())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles', filter: `id=eq.${authUser.id}` },
+        () => loadProfile(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [authUser?.id]);
 
   // Show toast notification
-  const showToastMessage = (message: string) => { toast.info(message); };
+  const showToastMessage = (message: string) => {
+    toast.info(message);
+  };
 
   const resendVerificationEmail = async () => {
     try {
@@ -167,7 +178,7 @@ export default function Profile() {
       await supabase.auth.resend({
         type: 'signup',
         email: user?.email || '',
-        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined as any,
+        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : (undefined as any),
       });
       showToastMessage('Verification email sent');
     } catch {}
@@ -180,15 +191,17 @@ export default function Profile() {
     showToastMessage('Signed out successfully');
   };
 
-  
-
   // Update user data (live). Special handling for email triggers verification email.
   const updateUser = async (field: keyof UserData, value: string) => {
     if (!user) return;
     if (field === 'email') {
       try {
-        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined;
-        const { error } = await supabase.auth.updateUser({ email: value }, { emailRedirectTo: redirectTo });
+        const redirectTo =
+          typeof window !== 'undefined' ? `${window.location.origin}/profile` : undefined;
+        const { error } = await supabase.auth.updateUser(
+          { email: value },
+          { emailRedirectTo: redirectTo },
+        );
         if (error) throw error;
         setEmailPending(true);
         showToastMessage('Verification email sent. Please verify to update your email.');
@@ -202,14 +215,20 @@ export default function Profile() {
     setUser(updatedUser);
     // Persist to profiles table
     if (field === 'name' || field === 'phone') {
-      await supabase.from('profiles').upsert({ id: user.id, name: updatedUser.name, phone: updatedUser.phone });
+      await supabase
+        .from('profiles')
+        .upsert({ id: user.id, name: updatedUser.name, phone: updatedUser.phone });
       // If phone changed, log a contact update event for admin visibility
       if (field === 'phone') {
         try {
           await fetch('/api/user/contact', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: user.id, email: updatedUser.email, phone: updatedUser.phone })
+            body: JSON.stringify({
+              userId: user.id,
+              email: updatedUser.email,
+              phone: updatedUser.phone,
+            }),
           });
         } catch {}
       }
@@ -218,62 +237,67 @@ export default function Profile() {
 
   const stats = [
     { label: 'Bookings', value: user?.stats?.bookings || '0', icon: Clock, color: 'text-blue-500' },
-    { label: 'Favorites', value: user?.stats?.favorites || '0', icon: Heart, color: 'text-red-500' },
+    {
+      label: 'Favorites',
+      value: user?.stats?.favorites || '0',
+      icon: Heart,
+      color: 'text-red-500',
+    },
     { label: 'Reviews', value: user?.stats?.reviews || '0', icon: Star, color: 'text-yellow-500' },
   ];
 
   const menuItems = [
-    { 
-      icon: Heart, 
-      label: 'My Favorites', 
+    {
+      icon: Heart,
+      label: 'My Favorites',
       href: '/wishlist',
-      count: user?.stats?.favorites || '0', 
+      count: user?.stats?.favorites || '0',
       color: 'text-red-500',
-      bgColor: 'bg-red-50'
+      bgColor: 'bg-red-50',
     },
-    { 
-      icon: Clock, 
-      label: 'Booking History', 
+    {
+      icon: Clock,
+      label: 'Booking History',
       href: '/orders',
-      count: user?.stats?.bookings || '0', 
+      count: user?.stats?.bookings || '0',
       color: 'text-blue-500',
-      bgColor: 'bg-blue-50'
+      bgColor: 'bg-blue-50',
     },
-    { 
-      icon: Star, 
-      label: 'My Reviews', 
+    {
+      icon: Star,
+      label: 'My Reviews',
       href: '/reviews',
-      count: user?.stats?.reviews || '0', 
+      count: user?.stats?.reviews || '0',
       color: 'text-yellow-500',
-      bgColor: 'bg-yellow-50'
+      bgColor: 'bg-yellow-50',
     },
-    { 
-      icon: Bell, 
-      label: 'Notifications', 
+    {
+      icon: Bell,
+      label: 'Notifications',
       href: '/notifications',
       color: 'text-purple-500',
-      bgColor: 'bg-purple-50'
+      bgColor: 'bg-purple-50',
     },
-    { 
-      icon: Settings, 
-      label: 'Settings', 
+    {
+      icon: Settings,
+      label: 'Settings',
       href: '/settings',
       color: 'text-gray-500',
-      bgColor: 'bg-gray-50'
+      bgColor: 'bg-gray-50',
     },
-    { 
-      icon: Shield, 
-      label: 'Privacy & Security', 
+    {
+      icon: Shield,
+      label: 'Privacy & Security',
       href: '/privacy',
       color: 'text-green-500',
-      bgColor: 'bg-green-50'
+      bgColor: 'bg-green-50',
     },
-    { 
-      icon: HelpCircle, 
-      label: 'Help & Support', 
+    {
+      icon: HelpCircle,
+      label: 'Help & Support',
       href: '/help',
       color: 'text-indigo-500',
-      bgColor: 'bg-indigo-50'
+      bgColor: 'bg-indigo-50',
     },
   ];
 
@@ -296,7 +320,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        
+
         <div className="pt-4 pb-20 px-4">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Profile</h2>
@@ -309,9 +333,13 @@ export default function Profile() {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
                 <User className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-gray-900 text-xl mb-2">Welcome to Taliyo Marketplace!</h3>
-              <p className="text-gray-600 mb-6">Sign in to book services, save favorites, and track your orders</p>
-              
+              <h3 className="font-bold text-gray-900 text-xl mb-2">
+                Welcome to Taliyo Marketplace!
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Sign in to book services, save favorites, and track your orders
+              </p>
+
               <div className="space-y-3">
                 <Link
                   href="/login?next=/profile"
@@ -367,7 +395,7 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Profile Header */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 mb-6 shadow-sm border border-gray-200 relative">
@@ -385,7 +413,7 @@ export default function Profile() {
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                 <div className="relative">
                   <Image
-                    src={user?.avatar || "https://picsum.photos/seed/profile-fallback/150/150"}
+                    src={user?.avatar || 'https://picsum.photos/seed/profile-fallback/150/150'}
                     alt="Profile"
                     width={64}
                     height={64}
@@ -393,18 +421,30 @@ export default function Profile() {
                     className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow"
                   />
                 </div>
-                
+
                 <div className="flex-1">
                   <>
-                    <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
+                    <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+                      {user?.name || 'User'}
+                    </h1>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
+                      <span className="text-gray-600 text-sm">
+                        {user?.email || 'user@example.com'}
+                      </span>
                       {emailVerified ? (
-                        <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
+                        <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                          Verified
+                        </span>
                       ) : (
                         <span className="inline-flex items-center gap-2 text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
                           {emailPending ? 'Verification Pending' : 'Not Verified'}
-                          <button type="button" onClick={resendVerificationEmail} className="underline text-blue-700">Send email</button>
+                          <button
+                            type="button"
+                            onClick={resendVerificationEmail}
+                            className="underline text-blue-700"
+                          >
+                            Send email
+                          </button>
                         </span>
                       )}
                     </div>
@@ -418,7 +458,10 @@ export default function Profile() {
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           {stats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-200">
+            <div
+              key={index}
+              className="bg-white rounded-xl p-4 text-center shadow-sm border border-gray-200"
+            >
               <stat.icon className={`w-6 h-6 mx-auto mb-2 ${stat.color}`} />
               <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
               <div className="text-xs text-gray-600">{stat.label}</div>
@@ -435,7 +478,9 @@ export default function Profile() {
               className="w-full bg-white rounded-xl p-4 flex items-center justify-between shadow-sm border border-gray-200 hover:shadow-md transition-all"
             >
               <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-lg ${item.bgColor} flex items-center justify-center`}>
+                <div
+                  className={`w-10 h-10 rounded-lg ${item.bgColor} flex items-center justify-center`}
+                >
                   <item.icon className={`w-5 h-5 ${item.color}`} />
                 </div>
                 <span className="font-medium text-gray-900">{item.label}</span>
@@ -453,7 +498,7 @@ export default function Profile() {
         </div>
 
         {/* Logout Button */}
-        <button 
+        <button
           onClick={handleSignOut}
           className="w-full bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 flex items-center justify-center gap-3 hover:bg-red-100 transition-colors"
         >

@@ -18,7 +18,7 @@ import {
   MusicIcon,
   PhotographyIcon,
   MarketingIcon,
-  ConsultingIcon
+  ConsultingIcon,
 } from './CustomIcons';
 import AnimatedIcon from './AnimatedIcon';
 
@@ -30,42 +30,42 @@ interface IconMapperProps {
   onClick?: () => void;
 }
 
-const IconMapper: React.FC<IconMapperProps> = ({ 
-  iconName, 
-  size = 24, 
-  className = '', 
+const IconMapper: React.FC<IconMapperProps> = ({
+  iconName,
+  size = 24,
+  className = '',
   animated = true,
-  onClick 
+  onClick,
 }) => {
   const getIconComponent = (name: string) => {
     const iconMap: { [key: string]: React.ComponentType<{ size?: number; className?: string }> } = {
       // Navigation icons
-      'home': HomeIcon,
-      'category': CategoryIcon,
-      'cart': CartIcon,
-      'profile': ProfileIcon,
-      
+      home: HomeIcon,
+      category: CategoryIcon,
+      cart: CartIcon,
+      profile: ProfileIcon,
+
       // Service category icons
-      'web': WebIcon,
-      'mobile': MobileIcon,
-      'design': DesignIcon,
-      'beauty': BeautyIcon,
-      'music': MusicIcon,
-      'photography': PhotographyIcon,
-      'marketing': MarketingIcon,
-      'consulting': ConsultingIcon,
-      
+      web: WebIcon,
+      mobile: MobileIcon,
+      design: DesignIcon,
+      beauty: BeautyIcon,
+      music: MusicIcon,
+      photography: PhotographyIcon,
+      marketing: MarketingIcon,
+      consulting: ConsultingIcon,
+
       // General icons
-      'package': PackageIcon,
-      'money': MoneyIcon,
-      'star': StarIcon,
-      'chat': ChatIcon,
-      'search': SearchIcon,
-      
+      package: PackageIcon,
+      money: MoneyIcon,
+      star: StarIcon,
+      chat: ChatIcon,
+      search: SearchIcon,
+
       // Default fallback
-      'default': PackageIcon
+      default: PackageIcon,
     };
-    
+
     return iconMap[name] || iconMap['default'];
   };
 
@@ -73,8 +73,8 @@ const IconMapper: React.FC<IconMapperProps> = ({
 
   if (animated) {
     return (
-      <AnimatedIcon 
-        size={size} 
+      <AnimatedIcon
+        size={size}
         className={className}
         onClick={onClick}
         hoverScale={1.1}
@@ -92,7 +92,7 @@ const IconMapper: React.FC<IconMapperProps> = ({
 export const getIconFromEmoji = (emoji: string): string => {
   const emojiToIconMap: { [key: string]: string } = {
     '🏠': 'home',
-    '📂': 'category', 
+    '📂': 'category',
     '🛒': 'cart',
     '👤': 'profile',
     '📦': 'package',
@@ -107,9 +107,9 @@ export const getIconFromEmoji = (emoji: string): string => {
     '🎵': 'music',
     '📸': 'photography',
     '📈': 'marketing',
-    '💼': 'consulting'
+    '💼': 'consulting',
   };
-  
+
   return emojiToIconMap[emoji] || 'default';
 };
 

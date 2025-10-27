@@ -45,7 +45,15 @@ interface Category {
   updated_at?: string;
 }
 
-export default function CategoryDetailClient({ initialCategory, initialServices, categoryId }: { initialCategory: Category | null; initialServices: Service[]; categoryId: string; }) {
+export default function CategoryDetailClient({
+  initialCategory,
+  initialServices,
+  categoryId,
+}: {
+  initialCategory: Category | null;
+  initialServices: Service[];
+  categoryId: string;
+}) {
   const router = useRouter();
   const { user, redirectToLogin } = useAuth();
   const [category, setCategory] = useState<Category | null>(initialCategory);
@@ -57,41 +65,64 @@ export default function CategoryDetailClient({ initialCategory, initialServices,
   useEffect(() => {
     const channel = supabase
       .channel('category_detail')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories', filter: `id=eq.${categoryId}` }, () => fetchCategoryData({ silent: true }))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchCategoryData({ silent: true }))
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'categories', filter: `id=eq.${categoryId}` },
+        () => fetchCategoryData({ silent: true }),
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () =>
+        fetchCategoryData({ silent: true }),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [categoryId]);
 
   useEffect(() => {
     const load = async () => {
-      if (!user?.id) { setWishlistIds(new Set()); return; }
-      const { data } = await supabase
-        .from('wishlists')
-        .select('service_id')
-        .eq('user_id', user.id);
+      if (!user?.id) {
+        setWishlistIds(new Set());
+        return;
+      }
+      const { data } = await supabase.from('wishlists').select('service_id').eq('user_id', user.id);
       setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
     };
     load();
     if (!user?.id) return;
     const ch = supabase
       .channel('category_wishlist_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` },
+        () => load(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user?.id]);
 
   const fetchCategoryData = async ({ silent = false }: { silent?: boolean } = {}) => {
     try {
-      if (!silent) { setLoading(true); setError(''); }
+      if (!silent) {
+        setLoading(true);
+        setError('');
+      }
       const [{ data: cat, error: catErr }, { data: svc, error: svcErr }] = await Promise.all([
-        supabase.from('categories').select('id,name,description,icon,slug,is_active,sort_order').eq('id', categoryId).maybeSingle(),
+        supabase
+          .from('categories')
+          .select('id,name,description,icon,slug,is_active,sort_order')
+          .eq('id', categoryId)
+          .maybeSingle(),
         supabase
           .from('services')
-          .select('id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at')
+          .select(
+            'id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at',
+          )
           .eq('category_id', categoryId)
           .eq('is_active', true)
-          .order('created_at', { ascending: false })
+          .order('created_at', { ascending: false }),
       ]);
       if (catErr) throw catErr;
       if (svcErr) throw svcErr;
@@ -107,24 +138,51 @@ export default function CategoryDetailClient({ initialCategory, initialServices,
   };
 
   const handleToggleWishlist = async (serviceId: string) => {
-    if (!user?.id) { redirectToLogin(); return; }
+    if (!user?.id) {
+      redirectToLogin();
+      return;
+    }
     try {
       if (wishlistIds.has(serviceId)) {
-        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
-        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+        await supabase
+          .from('wishlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('service_id', serviceId);
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.delete(serviceId);
+          return n;
+        });
       } else {
         await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
-        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.add(serviceId);
+          return n;
+        });
       }
     } catch {}
   };
 
   const getIconName = (iconName?: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
-      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
-      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
-      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
+      web: 'web',
+      mobile: 'mobile',
+      design: 'design',
+      home: 'home',
+      repair: 'package',
+      electrical: 'package',
+      garden: 'package',
+      education: 'package',
+      beauty: 'beauty',
+      fitness: 'package',
+      photography: 'photography',
+      writing: 'package',
+      music: 'music',
+      cooking: 'package',
+      marketing: 'marketing',
+      consulting: 'consulting',
     };
     return iconMap[iconName || 'default'] || 'package';
   };
@@ -177,10 +235,7 @@ export default function CategoryDetailClient({ initialCategory, initialServices,
           <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-4">Category not found</h2>
           <p className="text-gray-600 mb-6">The category you're looking for doesn't exist.</p>
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 font-medium"
-          >
+          <button onClick={() => router.back()} className="text-blue-600 font-medium">
             Go back
           </button>
         </div>
@@ -206,25 +261,17 @@ export default function CategoryDetailClient({ initialCategory, initialServices,
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
             <div>
-              <IconMapper 
-                iconName={getIconName(category.icon)} 
-                size={40}
-                animated={true}
-              />
+              <IconMapper iconName={getIconName(category.icon)} size={40} animated={true} />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{category.name}</h1>
-              {category.description && (
-                <p className="text-gray-600 mt-1">{category.description}</p>
-              )}
+              {category.description && <p className="text-gray-600 mt-1">{category.description}</p>}
             </div>
           </div>
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Services in {category.name}
-          </h2>
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Services in {category.name}</h2>
 
           {services.length === 0 ? (
             <div className="text-center py-12">

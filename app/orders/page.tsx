@@ -7,16 +7,16 @@ import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Calendar,
   MessageCircle,
   Star,
   MoreVertical,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/lib/AuthContext';
@@ -51,7 +51,11 @@ export default function Orders() {
     return localStorage.getItem('userPhone') || '';
   }, []);
 
-  const userEmail = user?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
+  const userEmail =
+    user?.email ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('userData') || 'null')?.email || ''
+      : '');
 
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const customService = useMemo(() => ({ id: 'custom', title: 'Custom Order' }), []);
@@ -65,9 +69,20 @@ export default function Orders() {
     if (!uid && !userEmail) return;
     const channel = supabase
       .channel('orders_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: uid ? `user_id=eq.${uid}` : undefined as any }, () => fetchBookings())
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: uid ? `user_id=eq.${uid}` : (undefined as any),
+        },
+        () => fetchBookings(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id, userEmail, storedPhone]);
 
   const fetchBookings = async () => {
@@ -96,7 +111,7 @@ export default function Orders() {
           .order('created_at', { ascending: false });
         data = byEmail || [];
       }
-      
+
       setBookings(data || []);
     } catch (e) {
       console.error('Failed to load bookings', e);
@@ -151,16 +166,19 @@ export default function Orders() {
       bookingDate: b.created_at,
       scheduledDate: b.preferred_date || undefined,
       completedDate: b.status === 'completed' ? b.updated_at : undefined,
-      image: (Array.isArray(b.images) ? b.images[0] : (b.images ? JSON.parse(b.images || '[]')[0] : '')) || 'https://picsum.photos/seed/order-image/400/300',
+      image:
+        (Array.isArray(b.images) ? b.images[0] : b.images ? JSON.parse(b.images || '[]')[0] : '') ||
+        'https://picsum.photos/seed/order-image/400/300',
       description: b.message || b.requirements || '',
       timeline: b.delivery_preference || b.timeline || '',
-      phone: b.phone || b.customer_phone || ''
+      phone: b.phone || b.customer_phone || '',
     }));
   }, [bookings]);
 
-  const filteredOrders = orders.filter(order => {
+  const filteredOrders = orders.filter((order) => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'pending') return ['pending', 'confirmed', 'in-progress'].includes(order.status);
+    if (activeTab === 'pending')
+      return ['pending', 'confirmed', 'in-progress'].includes(order.status);
     if (activeTab === 'completed') return ['completed', 'cancelled'].includes(order.status);
     return true;
   });
@@ -171,8 +189,6 @@ export default function Orders() {
     window.open(whatsappUrl, '_blank');
   };
 
-  
-
   if (!loading && orders.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -182,7 +198,7 @@ export default function Orders() {
             <Clock className="w-24 h-24 text-gray-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">No orders yet</h2>
             <p className="text-gray-600 mb-8">Your booking history will appear here</p>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
             >
@@ -208,13 +224,15 @@ export default function Orders() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Orders</h1>
-            <p className="text-gray-600">{orders.length} booking{orders.length > 1 ? 's' : ''} total</p>
+            <p className="text-gray-600">
+              {orders.length} booking{orders.length > 1 ? 's' : ''} total
+            </p>
           </div>
           <div className="w-full sm:w-auto">
             <button
@@ -226,7 +244,8 @@ export default function Orders() {
               Custom Order
             </button>
             <p className="text-xs text-gray-600 mt-2">
-              Customized booking chahiye? Apni requirement ke hisaab se yahan se book kar sakte hain.
+              Customized booking chahiye? Apni requirement ke hisaab se yahan se book kar sakte
+              hain.
             </p>
           </div>
         </div>
@@ -236,7 +255,7 @@ export default function Orders() {
           {[
             { key: 'all', label: 'All Orders' },
             { key: 'pending', label: 'Active' },
-            { key: 'completed', label: 'Completed' }
+            { key: 'completed', label: 'Completed' },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -274,9 +293,7 @@ export default function Orders() {
                     <h3 className="text-base font-semibold text-gray-900 leading-tight">
                       {order.serviceTitle}
                     </h3>
-                    <p className="text-xs text-gray-500 font-mono tracking-tight">
-                      #{order.id}
-                    </p>
+                    <p className="text-xs text-gray-500 font-mono tracking-tight">#{order.id}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -309,7 +326,9 @@ export default function Orders() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">₹{order.amount.toLocaleString()}</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    ₹{order.amount.toLocaleString()}
+                  </p>
                   <p className="text-[11px] text-gray-500">Quoted amount</p>
                 </div>
               </div>
@@ -360,9 +379,7 @@ export default function Orders() {
                     </div>
                     <span className="text-xs font-medium text-green-800">Your Review</span>
                   </div>
-                  {order.review && (
-                    <p className="text-xs text-green-700">{order.review}</p>
-                  )}
+                  {order.review && <p className="text-xs text-green-700">{order.review}</p>}
                 </div>
               )}
 
@@ -403,11 +420,11 @@ export default function Orders() {
         {filteredOrders.length === 0 && (
           <div className="text-center py-12">
             <Clock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No {activeTab} orders
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No {activeTab} orders</h3>
             <p className="text-gray-600">
-              {activeTab === 'pending' ? 'No active bookings at the moment' : 'No completed orders yet'}
+              {activeTab === 'pending'
+                ? 'No active bookings at the moment'
+                : 'No completed orders yet'}
             </p>
           </div>
         )}

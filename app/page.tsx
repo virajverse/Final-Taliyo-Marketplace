@@ -13,7 +13,9 @@ export default async function Page() {
     const [{ data: services }, { data: cats }] = await Promise.all([
       supabaseServer
         .from('services')
-        .select('id,title,description,price_min,price_max,price_type,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_featured,is_active,created_at')
+        .select(
+          'id,title,description,price_min,price_max,price_type,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_featured,is_active,created_at',
+        )
         .eq('is_active', true)
         .eq('is_featured', true)
         .order('created_at', { ascending: false })
@@ -48,5 +50,11 @@ export default async function Page() {
       banners = bnn || [];
     } catch {}
   } catch {}
-  return <HomePage initialFeaturedServices={featured} initialCategories={categories} initialBanners={banners} />;
+  return (
+    <HomePage
+      initialFeaturedServices={featured}
+      initialCategories={categories}
+      initialBanners={banners}
+    />
+  );
 }

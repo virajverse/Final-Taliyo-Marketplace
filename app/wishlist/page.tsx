@@ -57,7 +57,11 @@ export default function Wishlist() {
         .filter((row: any) => row.service)
         .map((row: any) => ({
           ...(row.service as any),
-          images: Array.isArray(row.service.images) ? row.service.images : (row.service.images ? JSON.parse(row.service.images) : []),
+          images: Array.isArray(row.service.images)
+            ? row.service.images
+            : row.service.images
+              ? JSON.parse(row.service.images)
+              : [],
           dateAdded: row.created_at,
         }));
       setWishlistItems(items);
@@ -77,19 +81,21 @@ export default function Wishlist() {
     if (!user?.id) return;
     const channel = supabase
       .channel('wishlists_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => fetchWishlist())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` },
+        () => fetchWishlist(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const handleToggleWishlist = async (serviceId: string) => {
     if (!user?.id) return;
-    await supabase
-      .from('wishlists')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('service_id', serviceId);
-    setWishlistItems(items => items.filter(item => item.id !== serviceId));
+    await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
+    setWishlistItems((items) => items.filter((item) => item.id !== serviceId));
   };
 
   const handleAddToCart = (serviceId: string) => {
@@ -98,10 +104,10 @@ export default function Wishlist() {
   };
 
   const handleShare = () => {
-    const message = `Check out my wishlist on Taliyo Marketplace:\n\n${wishlistItems.map(item => 
-      `${item.title} - ₹${item.price_min?.toLocaleString()}`
-    ).join('\n')}\n\nDiscover amazing services at Taliyo Marketplace!`;
-    
+    const message = `Check out my wishlist on Taliyo Marketplace:\n\n${wishlistItems
+      .map((item) => `${item.title} - ₹${item.price_min?.toLocaleString()}`)
+      .join('\n')}\n\nDiscover amazing services at Taliyo Marketplace!`;
+
     if (navigator.share) {
       navigator.share({
         title: 'My Taliyo Marketplace Wishlist',
@@ -123,7 +129,7 @@ export default function Wishlist() {
             <AlertCircle className="w-24 h-24 text-red-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
             <p className="text-gray-600 mb-8">{error}</p>
-            <button 
+            <button
               onClick={fetchWishlist}
               className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
             >
@@ -145,7 +151,7 @@ export default function Wishlist() {
             <Heart className="w-24 h-24 text-gray-300 mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Your wishlist is empty</h2>
             <p className="text-gray-600 mb-8">Save services you love to book them later</p>
-            <button 
+            <button
               onClick={() => window.history.back()}
               className="bg-gradient-to-r from-blue-500 to-green-500 text-white px-8 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200"
             >
@@ -161,13 +167,15 @@ export default function Wishlist() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">My Wishlist</h1>
-            <p className="text-gray-600">{wishlistItems.length} service{wishlistItems.length > 1 ? 's' : ''} saved</p>
+            <p className="text-gray-600">
+              {wishlistItems.length} service{wishlistItems.length > 1 ? 's' : ''} saved
+            </p>
           </div>
           <button
             onClick={handleShare}
@@ -188,7 +196,7 @@ export default function Wishlist() {
             <button
               onClick={() => {
                 // Add all to cart logic
-                wishlistItems.forEach(item => handleAddToCart(item.id));
+                wishlistItems.forEach((item) => handleAddToCart(item.id));
               }}
               className="w-full sm:w-auto bg-red-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-red-600 transition-colors flex items-center gap-2"
             >
@@ -207,7 +215,7 @@ export default function Wishlist() {
                 onToggleWishlist={handleToggleWishlist}
                 isInWishlist={true}
               />
-              
+
               {/* Date Added Badge */}
               <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
                 <span className="text-xs text-gray-600">
@@ -227,11 +235,17 @@ export default function Wishlist() {
             </p>
             <button
               onClick={() => {
-                const message = `Hi! I'm interested in these services from my wishlist:\n\n${wishlistItems.map(item => 
-                  `Service: ${item.title}\nPrice: ₹${item.price_min?.toLocaleString()} - ₹${item.price_max?.toLocaleString()}\nProvider: ${item.provider_name}\n`
-                ).join('\n')}\nPlease provide more details and quotes.`;
+                const message = `Hi! I'm interested in these services from my wishlist:\n\n${wishlistItems
+                  .map(
+                    (item) =>
+                      `Service: ${item.title}\nPrice: ₹${item.price_min?.toLocaleString()} - ₹${item.price_max?.toLocaleString()}\nProvider: ${item.provider_name}\n`,
+                  )
+                  .join('\n')}\nPlease provide more details and quotes.`;
                 const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
-                if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+                if (!supportWhatsapp) {
+                  console.warn('Support WhatsApp not configured');
+                  return;
+                }
                 const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
               }}

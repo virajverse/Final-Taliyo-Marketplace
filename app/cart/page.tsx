@@ -46,28 +46,29 @@ export default function Cart() {
       removeItem(id);
       return;
     }
-    setCartItems(items => 
-      items.map(item => 
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
+    setCartItems((items) =>
+      items.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item)),
     );
   };
 
   const removeItem = (id: number) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+    setCartItems((items) => items.filter((item) => item.id !== id));
   };
 
   const getItemPrice = (item: CartItem) => {
     return item.price_min || 0;
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (getItemPrice(item) * item.quantity), 0);
+  const subtotal = cartItems.reduce((sum, item) => sum + getItemPrice(item) * item.quantity, 0);
   const total = subtotal;
 
   const handleWhatsAppSupport = () => {
     const message = `Hi! I need help with my cart on Taliyo Marketplace.`;
     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
-    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+    if (!supportWhatsapp) {
+      console.warn('Support WhatsApp not configured');
+      return;
+    }
     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -76,7 +77,7 @@ export default function Cart() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header cartCount={0} />
-        
+
         <div className="pt-8 pb-20 px-4">
           <div className="text-center py-16">
             <ShoppingCart className="w-20 h-20 text-gray-300 mx-auto mb-6" />
@@ -99,7 +100,7 @@ export default function Cart() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header cartCount={cartItems.length} />
-      
+
       <div className="pt-4 pb-32 px-4">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Shopping Cart</h2>
@@ -109,7 +110,10 @@ export default function Cart() {
         {/* Cart Items */}
         <div className="space-y-4 mb-6">
           {cartItems.map((item) => (
-            <div key={item.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200">
+            <div
+              key={item.id}
+              className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200"
+            >
               <div className="flex gap-4">
                 <Image
                   src={item.images || 'https://picsum.photos/seed/cart-item/400/300'}
@@ -119,7 +123,7 @@ export default function Cart() {
                   loader={isSupabaseUrl(item.images || '') ? supabaseImageLoader : undefined}
                   className="w-20 h-20 rounded-xl object-cover"
                 />
-                
+
                 <div className="flex-1">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -136,7 +140,9 @@ export default function Cart() {
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900">₹{getItemPrice(item).toLocaleString()}</span>
+                      <span className="font-bold text-gray-900">
+                        ₹{getItemPrice(item).toLocaleString()}
+                      </span>
                       <span className="text-xs text-gray-500 capitalize">({item.price_type})</span>
                     </div>
 
@@ -165,13 +171,13 @@ export default function Cart() {
         {/* Bill Summary */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mb-6">
           <h3 className="font-semibold text-gray-900 mb-4">Bill Summary</h3>
-          
+
           <div className="space-y-3">
             <div className="flex justify-between text-gray-600">
               <span>Subtotal ({cartItems.length} items)</span>
               <span>₹{subtotal.toLocaleString()}</span>
             </div>
-            
+
             <div className="border-t border-gray-200 pt-3">
               <div className="flex justify-between text-lg font-bold text-gray-900">
                 <span>Total Amount</span>
@@ -209,7 +215,7 @@ export default function Cart() {
                   price_min: subtotal,
                   price_max: total,
                   provider_name: 'Multiple Providers',
-                  rating_average: 4.5
+                  rating_average: 4.5,
                 };
                 setSelectedService(combinedService);
                 setIsBookingModalOpen(true);
@@ -224,11 +230,8 @@ export default function Cart() {
       </div>
 
       <BottomNavigation />
-      
-      <OrderProceedModal
-        isOpen={isProceedModalOpen}
-        onClose={() => setIsProceedModalOpen(false)}
-      />
+
+      <OrderProceedModal isOpen={isProceedModalOpen} onClose={() => setIsProceedModalOpen(false)} />
 
       {selectedService && (
         <BookingModal

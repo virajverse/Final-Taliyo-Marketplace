@@ -16,9 +16,12 @@ export default function AuthCallback() {
     (async () => {
       try {
         const nextParam = search?.get('next') || '/profile';
-        const safeNext = typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/profile';
+        const safeNext =
+          typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/profile';
         // Ensure the session in the URL is captured (detectSessionInUrl is enabled in client)
-        const { data: { session } } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
         if (session) {
           setMessage('Sign-in complete. Redirecting...');
           router.replace(safeNext);
@@ -40,7 +43,11 @@ export default function AuthCallback() {
         setMessage('Could not complete sign-in. You can close this tab.');
       }
     })();
-    return () => { try { unsub?.unsubscribe?.(); } catch {} };
+    return () => {
+      try {
+        unsub?.unsubscribe?.();
+      } catch {}
+    };
   }, [router, search]);
 
   return (

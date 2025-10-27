@@ -1,6 +1,18 @@
 'use client';
 
-import { Search, ShoppingCart, Menu, X, Home, Grid3X3, Heart, Clock, User, HelpCircle, Phone } from 'lucide-react';
+import {
+  Search,
+  ShoppingCart,
+  Menu,
+  X,
+  Home,
+  Grid3X3,
+  Heart,
+  Clock,
+  User,
+  HelpCircle,
+  Phone,
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PWAInstallBridge from './PWAInstallBridge';
@@ -13,7 +25,10 @@ interface HeaderProps {
 export default function Header({ cartCount = 0 }: HeaderProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [verify, setVerify] = useState<{ show: boolean; email: string }>({ show: false, email: '' });
+  const [verify, setVerify] = useState<{ show: boolean; email: string }>({
+    show: false,
+    email: '',
+  });
   const [sending, setSending] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState('');
 
@@ -29,8 +44,12 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
     let mounted = true;
     (async () => {
       try {
-        const email = typeof window !== 'undefined' ? (localStorage.getItem('pendingVerifyEmail') || '') : '';
-        const dismissed = typeof window !== 'undefined' ? (localStorage.getItem('dismissVerifyBanner') === '1') : false;
+        const email =
+          typeof window !== 'undefined' ? localStorage.getItem('pendingVerifyEmail') || '' : '';
+        const dismissed =
+          typeof window !== 'undefined'
+            ? localStorage.getItem('dismissVerifyBanner') === '1'
+            : false;
         // If user is verified, clear banner keys
         const { data } = await supabase.auth.getUser();
         const verified = !!data.user?.email_confirmed_at;
@@ -48,7 +67,8 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
       } catch {}
     })();
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'pendingVerifyEmail' && !e.newValue) setVerify(v => ({ ...v, show: false, email: '' }));
+      if (e.key === 'pendingVerifyEmail' && !e.newValue)
+        setVerify((v) => ({ ...v, show: false, email: '' }));
     };
     if (typeof window !== 'undefined') window.addEventListener('storage', onStorage);
     return () => {
@@ -65,7 +85,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
       await supabase.auth.resend({
         type: 'signup',
         email: verify.email,
-        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined as any,
+        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : (undefined as any),
       });
       setVerifyMsg('Verification email sent');
     } catch {
@@ -76,8 +96,10 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
   };
 
   const dismissVerify = () => {
-    try { if (typeof window !== 'undefined') localStorage.setItem('dismissVerifyBanner', '1'); } catch {}
-    setVerify(v => ({ ...v, show: false }));
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem('dismissVerifyBanner', '1');
+    } catch {}
+    setVerify((v) => ({ ...v, show: false }));
   };
 
   const menuItems = [
@@ -102,19 +124,19 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
     >
       <div className="px-4 py-3">
         <div className="flex flex-wrap items-center gap-3">
-          <button 
+          <button
             onClick={toggleMenu}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
           >
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          
+
           <Link href="/" className="flex-shrink-0">
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
               Taliyo Marketplace
             </h1>
           </Link>
-          
+
           <div className="flex-1 min-w-0 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
@@ -126,7 +148,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-400"
             />
           </div>
-          
+
           <Link href="/cart" className="relative">
             <div className="p-2 rounded-full hover:bg-gray-100 transition-colors">
               <ShoppingCart className="w-5 h-5 text-gray-600" />
@@ -147,15 +169,24 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
         <div className="px-4 pb-3 -mt-2">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 flex items-center justify-between">
             <div className="text-xs text-yellow-800">
-              <span className="font-medium">Email unverified.</span> Check your inbox {verify.email ? `(${verify.email})` : ''}.
-              <Link href="/verify-email" className="ml-2 text-blue-700 hover:underline">Verify page</Link>
+              <span className="font-medium">Email unverified.</span> Check your inbox{' '}
+              {verify.email ? `(${verify.email})` : ''}.
+              <Link href="/verify-email" className="ml-2 text-blue-700 hover:underline">
+                Verify page
+              </Link>
               {verifyMsg && <span className="ml-2">{verifyMsg}</span>}
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={resendVerify} disabled={sending} className="text-xs text-blue-700 hover:underline">
+              <button
+                onClick={resendVerify}
+                disabled={sending}
+                className="text-xs text-blue-700 hover:underline"
+              >
                 {sending ? 'Sending…' : 'Resend'}
               </button>
-              <button onClick={dismissVerify} className="text-xs text-gray-600 hover:underline">Dismiss</button>
+              <button onClick={dismissVerify} className="text-xs text-gray-600 hover:underline">
+                Dismiss
+              </button>
             </div>
           </div>
         </div>
@@ -165,11 +196,8 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
       {isMenuOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            onClick={closeMenu}
-          ></div>
-          
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50" onClick={closeMenu}></div>
+
           {/* Sidebar */}
           <div className="fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-white shadow-xl z-50 transform transition-transform duration-300 flex flex-col">
             {/* Header */}
@@ -177,7 +205,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                 Taliyo Marketplace
               </h2>
-              <button 
+              <button
                 onClick={closeMenu}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
@@ -215,7 +243,10 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                   onClick={() => {
                     const message = `Hi! I need help with Taliyo Marketplace services.`;
                     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
-                    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+                    if (!supportWhatsapp) {
+                      console.warn('Support WhatsApp not configured');
+                      return;
+                    }
                     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
                     window.open(whatsappUrl, '_blank');
                     closeMenu();

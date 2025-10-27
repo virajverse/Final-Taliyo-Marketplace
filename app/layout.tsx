@@ -11,11 +11,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 // Metadata temporarily disabled to avoid unexpected token issues during dev build. Re-enable once stable.
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -33,9 +29,7 @@ export default function RootLayout({
         <ToastProvider>
           <AuthProvider>
             <Suspense fallback={null}>
-              <ProtectedRoute>
-                {children}
-              </ProtectedRoute>
+              <ProtectedRoute>{children}</ProtectedRoute>
             </Suspense>
           </AuthProvider>
         </ToastProvider>

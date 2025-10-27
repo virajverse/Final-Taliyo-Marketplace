@@ -8,7 +8,12 @@ try {
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['placehold.co', 'picsum.photos', 'images.unsplash.com', ...(supabaseHost ? [supabaseHost] : [])],
+    domains: [
+      'placehold.co',
+      'picsum.photos',
+      'images.unsplash.com',
+      ...(supabaseHost ? [supabaseHost] : []),
+    ],
     remotePatterns: supabaseHost
       ? [
           {
@@ -34,7 +39,10 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           ...(process.env.NODE_ENV === 'production'
             ? [
-                { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+                {
+                  key: 'Strict-Transport-Security',
+                  value: 'max-age=63072000; includeSubDomains; preload',
+                },
                 {
                   key: 'Content-Security-Policy',
                   value:
@@ -46,6 +54,6 @@ const nextConfig = {
       },
     ];
   },
-}
+};
 
 export default nextConfig;

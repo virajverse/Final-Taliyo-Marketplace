@@ -1,10 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY')
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
 // Dynamic storage adapter: routes Supabase session to localStorage when Remember Me is on,
@@ -20,8 +20,12 @@ const dynamicStorage = {
       return val as any;
     } catch {
       // Fallback: try both storages
-      try { return localStorage.getItem(key) as any; } catch {}
-      try { return sessionStorage.getItem(key) as any; } catch {}
+      try {
+        return localStorage.getItem(key) as any;
+      } catch {}
+      try {
+        return sessionStorage.getItem(key) as any;
+      } catch {}
       return null as any;
     }
   },
@@ -34,8 +38,12 @@ const dynamicStorage = {
   removeItem: (key: string) => {
     if (typeof window === 'undefined') return;
     // Remove from both to avoid stale session when toggling Remember Me
-    try { localStorage.removeItem(key); } catch {}
-    try { sessionStorage.removeItem(key); } catch {}
+    try {
+      localStorage.removeItem(key);
+    } catch {}
+    try {
+      sessionStorage.removeItem(key);
+    } catch {}
   },
 };
 
@@ -46,4 +54,4 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: dynamicStorage as any,
   },
-})
+});

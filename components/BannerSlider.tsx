@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
-import { supabase } from "@/lib/supabaseClient";
-import { MessageCircle } from "lucide-react";
+import { supabase } from '@/lib/supabaseClient';
+import { MessageCircle } from 'lucide-react';
 
 type Banner = {
   id: string;
@@ -22,7 +22,11 @@ type Banner = {
   aria_label?: string | null;
 };
 
-export default function BannerSlider({ initialBanners = [] as Banner[] }: { initialBanners?: Banner[] }) {
+export default function BannerSlider({
+  initialBanners = [] as Banner[],
+}: {
+  initialBanners?: Banner[];
+}) {
   const [banners, setBanners] = useState<Banner[]>(initialBanners);
   const [active, setActive] = useState(0);
   const slides = useMemo(() => banners, [banners]);
@@ -30,7 +34,8 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
   // Filter banners by schedule/target
   const filterScheduled = (data: any[]) => {
     const now = Date.now();
-    const isMobile = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : true;
+    const isMobile =
+      typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : true;
     return (data || []).filter((b: any) => {
       const s = b.start_at ? Date.parse(b.start_at) : null;
       const e = b.end_at ? Date.parse(b.end_at) : null;
@@ -55,7 +60,9 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
     let mounted = true;
     // If initial banners exist, avoid client fetch (prevents 403s with strict RLS)
     if (initialBanners && initialBanners.length) {
-      return () => { mounted = false; };
+      return () => {
+        mounted = false;
+      };
     }
     (async () => {
       try {
@@ -72,32 +79,49 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
         } catch {}
 
         const { data } = await supabase
-          .from("banners")
-          .select("*")
-          .eq("active", true)
-          .order("sort_order", { ascending: true })
+          .from('banners')
+          .select('*')
+          .eq('active', true)
+          .order('sort_order', { ascending: true })
           .limit(limit);
         if (!mounted) return;
         if (data && data.length) {
           const scheduled = filterScheduled(data as any[]);
           setBanners(scheduled as any);
-        }
-        else {
+        } else {
           const w = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
           if (w) {
             setBanners([
-              { id: 'default-1', image_url: '', cta_text: `+91 ${w}`, cta_url: `https://wa.me/${w}`, cta_align: 'center' }
+              {
+                id: 'default-1',
+                image_url: '',
+                cta_text: `+91 ${w}`,
+                cta_url: `https://wa.me/${w}`,
+                cta_align: 'center',
+              },
             ]);
           } else {
-            setBanners([{ id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' }]);
+            setBanners([
+              { id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' },
+            ]);
           }
         }
       } catch {
         const w = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
         if (w) {
-          setBanners([{ id: 'default-1', image_url: '', cta_text: `+91 ${w}`, cta_url: `https://wa.me/${w}`, cta_align: 'center' }]);
+          setBanners([
+            {
+              id: 'default-1',
+              image_url: '',
+              cta_text: `+91 ${w}`,
+              cta_url: `https://wa.me/${w}`,
+              cta_align: 'center',
+            },
+          ]);
         } else {
-          setBanners([{ id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' }]);
+          setBanners([
+            { id: 'default-1', image_url: '', cta_text: '', cta_url: '', cta_align: 'center' },
+          ]);
         }
       }
     })();
@@ -121,7 +145,7 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
       await fetch('/api/banners/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, type })
+        body: JSON.stringify({ id, type }),
       });
     } catch {}
   };
@@ -142,7 +166,7 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
       track(banner.id, 'click');
     }
     const url = banner.cta_url;
-    if (url.startsWith("http")) window.open(url, "_blank");
+    if (url.startsWith('http')) window.open(url, '_blank');
     else window.location.href = url;
   };
 
@@ -150,10 +174,18 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
 
   return (
     <div className="relative overflow-hidden rounded-2xl mb-6 h-40 sm:h-48">
-      <div className="flex transition-transform duration-500 h-full" style={{ transform: `translateX(-${active * 100}%)` }}>
+      <div
+        className="flex transition-transform duration-500 h-full"
+        style={{ transform: `translateX(-${active * 100}%)` }}
+      >
         {slides.map((b) => {
           const align = b.cta_align || 'center';
-          const justify = align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center';
+          const justify =
+            align === 'left'
+              ? 'justify-start'
+              : align === 'right'
+                ? 'justify-end'
+                : 'justify-center';
           return (
             <div key={b.id} className="min-w-full h-full relative bg-gray-200">
               {b.video_url ? (
@@ -167,9 +199,20 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
                   preload="metadata"
                 />
               ) : b.image_url ? (
-                <Image src={b.image_url} alt="banner" fill loader={isSupabaseUrl(b.image_url) ? supabaseImageLoader : undefined} className="object-cover" />
+                <Image
+                  src={b.image_url}
+                  alt="banner"
+                  fill
+                  loader={isSupabaseUrl(b.image_url) ? supabaseImageLoader : undefined}
+                  className="object-cover"
+                />
               ) : null}
-              <div className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${Math.min(0.6, Math.max(0, Number(b.overlay_opacity ?? 0.1)))})` }} />
+              <div
+                className="absolute inset-0"
+                style={{
+                  backgroundColor: `rgba(0,0,0,${Math.min(0.6, Math.max(0, Number(b.overlay_opacity ?? 0.1)))})`,
+                }}
+              />
               {b.cta_text ? (
                 <div className={`absolute inset-x-0 bottom-3 px-4 flex ${justify}`}>
                   <button
@@ -193,7 +236,7 @@ export default function BannerSlider({ initialBanners = [] as Banner[] }: { init
               key={i}
               onClick={() => setActive(i)}
               className={`h-1.5 rounded-full transition-all ${
-                i === active ? "w-5 bg-white" : "w-2 bg-white/60"
+                i === active ? 'w-5 bg-white' : 'w-2 bg-white/60'
               }`}
             />
           ))}

@@ -35,17 +35,21 @@ interface ServiceCardProps {
   onAddedToCart?: (newCount: number) => void;
 }
 
-export default function ServiceCard({ 
-  service, 
-  onToggleWishlist, 
+export default function ServiceCard({
+  service,
+  onToggleWishlist,
   isInWishlist = false,
-  onAddedToCart
+  onAddedToCart,
 }: ServiceCardProps) {
   const [imageError, setImageError] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { isLoggedIn, redirectToLogin } = useAuth();
-  const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
+  const images = Array.isArray(service.images)
+    ? service.images
+    : service.images
+      ? JSON.parse(service.images as string)
+      : [];
   const primaryImage = images[0] || 'https://picsum.photos/seed/service-card-fallback/400/300';
 
   const formatPrice = () => {
@@ -79,10 +83,10 @@ export default function ServiceCard({
 
     // Get existing cart from localStorage
     const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    
+
     // Check if item already exists
     const existingItemIndex = existingCart.findIndex((item: any) => item.service_id === service.id);
-    
+
     if (existingItemIndex > -1) {
       // Increase quantity
       existingCart[existingItemIndex].quantity += 1;
@@ -107,17 +111,17 @@ export default function ServiceCard({
         price_type: service.price_type,
         images: firstImage,
         provider_name: service.provider_name,
-        quantity: 1
+        quantity: 1,
       };
       existingCart.push(cartItem);
     }
-    
+
     // Save to localStorage
     localStorage.setItem('cart', JSON.stringify(existingCart));
 
     const newCount = existingCart.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
     onAddedToCart?.(newCount);
-    
+
     // Show feedback
     setIsAddedToCart(true);
     setTimeout(() => setIsAddedToCart(false), 2000);
@@ -129,11 +133,17 @@ export default function ServiceCard({
         <div className="relative">
           <Link href={`/services/${service.id}`} className="block">
             <Image
-              src={imageError ? 'https://picsum.photos/seed/service-card-error/400/300' : primaryImage}
+              src={
+                imageError ? 'https://picsum.photos/seed/service-card-error/400/300' : primaryImage
+              }
               alt={service.title}
               width={800}
               height={600}
-              loader={isSupabaseUrl(imageError ? undefined : primaryImage) ? supabaseImageLoader : undefined}
+              loader={
+                isSupabaseUrl(imageError ? undefined : primaryImage)
+                  ? supabaseImageLoader
+                  : undefined
+              }
               onError={() => setImageError(true)}
               className="w-full h-40 object-cover"
             />
@@ -141,8 +151,8 @@ export default function ServiceCard({
           <button
             onClick={() => onToggleWishlist?.(service.id)}
             className={`absolute top-3 right-3 p-2 rounded-full backdrop-blur-sm transition-all duration-200 ${
-              isInWishlist 
-                ? 'bg-red-500 text-white' 
+              isInWishlist
+                ? 'bg-red-500 text-white'
                 : 'bg-white/80 text-gray-600 hover:bg-white hover:text-red-500'
             }`}
           >
@@ -156,11 +166,9 @@ export default function ServiceCard({
               {service.title}
             </Link>
           </h3>
-          
+
           {service.description && (
-            <p className="text-xs text-gray-600 mb-3 line-clamp-2">
-              {service.description}
-            </p>
+            <p className="text-xs text-gray-600 mb-3 line-clamp-2">{service.description}</p>
           )}
 
           {service.provider_name && (
@@ -170,7 +178,9 @@ export default function ServiceCard({
                 alt={service.provider_name || 'Provider avatar'}
                 width={24}
                 height={24}
-                loader={isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined}
+                loader={
+                  isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined
+                }
                 className="w-6 h-6 rounded-full object-cover"
               />
               <span className="text-xs text-gray-600">by {service.provider_name}</span>
@@ -182,9 +192,7 @@ export default function ServiceCard({
             <span className="text-sm font-medium text-gray-900">
               {service.rating_average.toFixed(1)}
             </span>
-            <span className="text-xs text-gray-500">
-              ({service.rating_count})
-            </span>
+            <span className="text-xs text-gray-500">({service.rating_count})</span>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 mb-3 text-xs text-gray-500">
@@ -204,8 +212,8 @@ export default function ServiceCard({
             <button
               onClick={handleAddToCart}
               className={`px-4 py-2.5 rounded-full text-sm font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 ${
-                isAddedToCart 
-                  ? 'bg-green-500 text-white' 
+                isAddedToCart
+                  ? 'bg-green-500 text-white'
                   : 'bg-gradient-to-r from-blue-500 to-green-500 text-white'
               }`}
             >
@@ -214,7 +222,7 @@ export default function ServiceCard({
           </div>
         </div>
       </div>
-      
+
       <BookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}

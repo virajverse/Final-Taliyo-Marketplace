@@ -35,7 +35,13 @@ interface Service {
   updated_at: string;
 }
 
-export default function ServiceDetailClient({ initialService, serviceId }: { initialService: Service | null; serviceId: string; }) {
+export default function ServiceDetailClient({
+  initialService,
+  serviceId,
+}: {
+  initialService: Service | null;
+  serviceId: string;
+}) {
   const router = useRouter();
   const { user, isAuthenticated, showLoginModal } = useAuth();
   const [service, setService] = useState<Service | null>(initialService);
@@ -47,16 +53,24 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
   useEffect(() => {
     const channel = supabase
       .channel('service_detail')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services', filter: `id=eq.${serviceId}` }, () => fetchService({ silent: true }))
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'services', filter: `id=eq.${serviceId}` },
+        () => fetchService({ silent: true }),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [serviceId]);
 
   useEffect(() => {
     // Track service view (non-blocking, avoid double-counting SSR)
     if (!serviceId) return;
     (async () => {
-      try { await supabase.from('analytics').insert([{ service_id: serviceId, event_type: 'view' }]); } catch {}
+      try {
+        await supabase.from('analytics').insert([{ service_id: serviceId, event_type: 'view' }]);
+      } catch {}
     })();
   }, [serviceId]);
 
@@ -127,7 +141,10 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
           ? service.images[0]
           : (() => {
               try {
-                const parsed = typeof service.images === 'string' ? JSON.parse(service.images as unknown as string) : service.images;
+                const parsed =
+                  typeof service.images === 'string'
+                    ? JSON.parse(service.images as unknown as string)
+                    : service.images;
                 return Array.isArray(parsed) ? parsed[0] : (service.images as unknown as string);
               } catch {
                 return service.images as unknown as string;
@@ -174,10 +191,7 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
         <Header />
         <div className="pt-8 pb-20 px-4 text-center">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Service not found</h2>
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 font-medium"
-          >
+          <button onClick={() => router.back()} className="text-blue-600 font-medium">
             Go back
           </button>
         </div>
@@ -186,12 +200,16 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
     );
   }
 
-  const images = Array.isArray(service.images) ? service.images : (service.images ? JSON.parse(service.images as string) : []);
+  const images = Array.isArray(service.images)
+    ? service.images
+    : service.images
+      ? JSON.parse(service.images as string)
+      : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-40">
         <div className="px-4 mb-4">
           <button
@@ -209,7 +227,9 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
               src={images[selectedImage] || images[0]}
               alt={service.title}
               fill
-              loader={isSupabaseUrl(images[selectedImage] || images[0]) ? supabaseImageLoader : undefined}
+              loader={
+                isSupabaseUrl(images[selectedImage] || images[0]) ? supabaseImageLoader : undefined
+              }
               className="object-cover"
             />
           </div>
@@ -223,7 +243,14 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
                     selectedImage === idx ? 'border-blue-500' : 'border-gray-200'
                   }`}
                 >
-                  <Image src={img} alt={`${service.title} ${idx + 1}`} width={64} height={64} loader={isSupabaseUrl(img) ? supabaseImageLoader : undefined} className="w-full h-full object-cover" />
+                  <Image
+                    src={img}
+                    alt={`${service.title} ${idx + 1}`}
+                    width={64}
+                    height={64}
+                    loader={isSupabaseUrl(img) ? supabaseImageLoader : undefined}
+                    className="w-full h-full object-cover"
+                  />
                 </button>
               ))}
             </div>
@@ -233,7 +260,7 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
         <div className="px-4 mb-6">
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">{service.title}</h1>
-            
+
             <div className="flex flex-wrap items-center gap-4 mb-4">
               <div className="flex items-center gap-1">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
@@ -269,14 +296,18 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
           <div className="px-4 mb-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-4">Service Provider</h3>
-              
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <Image
-                  src={service.provider_avatar || 'https://picsum.photos/seed/provider-avatar/60/60'}
+                  src={
+                    service.provider_avatar || 'https://picsum.photos/seed/provider-avatar/60/60'
+                  }
                   alt={service.provider_name || 'Provider avatar'}
                   width={48}
                   height={48}
-                  loader={isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined}
+                  loader={
+                    isSupabaseUrl(service.provider_avatar || '') ? supabaseImageLoader : undefined
+                  }
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div className="flex-1">
@@ -293,7 +324,10 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
 
       <div
         className="fixed left-0 right-0 bg-white border-t border-gray-200 p-2 z-40 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
-        style={{ bottom: 'calc(80px + env(safe-area-inset-bottom))', paddingBottom: 'env(safe-area-inset-bottom)' }}
+        style={{
+          bottom: 'calc(80px + env(safe-area-inset-bottom))',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         <div className="max-w-3xl mx-auto px-2 flex gap-2">
           <button
@@ -307,7 +341,7 @@ export default function ServiceDetailClient({ initialService, serviceId }: { ini
       </div>
 
       <BottomNavigation />
-      
+
       <BookingModal
         isOpen={isBookingModalOpen}
         onClose={() => setIsBookingModalOpen(false)}

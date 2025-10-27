@@ -9,9 +9,13 @@ export async function POST(req: Request) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string | undefined;
-    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) as string | undefined;
+    const serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) as string | undefined;
     if (!supabaseUrl || !serviceKey) {
-      return NextResponse.json({ ok: false, error: 'Supabase env not configured' }, { status: 500 });
+      return NextResponse.json(
+        { ok: false, error: 'Supabase env not configured' },
+        { status: 500 },
+      );
     }
 
     const supabase = createClient(supabaseUrl, serviceKey);

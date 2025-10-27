@@ -4,16 +4,19 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'nodejs';
 
 const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-const adminWhatsappNumber = process.env.ADMIN_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '';
+const supabaseServiceKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
+const adminWhatsappNumber =
+  process.env.ADMIN_WHATSAPP_NUMBER || process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '';
 
 // Check if Supabase is configured
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.warn('Supabase not configured. Bookings API will not work. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.');
+  console.warn(
+    'Supabase not configured. Bookings API will not work. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your environment.',
+  );
 }
-const supabase = supabaseUrl && supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey)
-  : null;
+const supabase =
+  supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
 // Basic in-memory rate limiting (per IP): 5 requests / 10 minutes
 const rlWindowMs = 10 * 60 * 1000;
@@ -22,13 +25,13 @@ const rlMap = new Map<string, number[]>();
 
 function getClientIp(req: NextRequest): string {
   const fwd = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
-  return fwd || (req.headers.get('x-real-ip') || '') || 'unknown';
+  return fwd || req.headers.get('x-real-ip') || '' || 'unknown';
 }
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const arr = rlMap.get(ip) || [];
-  const filtered = arr.filter(ts => now - ts < rlWindowMs);
+  const filtered = arr.filter((ts) => now - ts < rlWindowMs);
   filtered.push(now);
   rlMap.set(ip, filtered);
   return filtered.length > rlMax;
@@ -40,13 +43,21 @@ async function ensureBucket(bucketName: string) {
   try {
     const { data } = await (supabase as any).storage.getBucket(bucketName);
     if (!data) {
-      await (supabase as any).storage.createBucket(bucketName, { public: false, fileSizeLimit: 10 * 1024 * 1024 });
+      await (supabase as any).storage.createBucket(bucketName, {
+        public: false,
+        fileSizeLimit: 10 * 1024 * 1024,
+      });
     } else if ((data as any)?.public === true) {
-      try { await (supabase as any).storage.updateBucket(bucketName, { public: false }); } catch {}
+      try {
+        await (supabase as any).storage.updateBucket(bucketName, { public: false });
+      } catch {}
     }
   } catch {
     try {
-      await (supabase as any).storage.createBucket(bucketName, { public: false, fileSizeLimit: 10 * 1024 * 1024 });
+      await (supabase as any).storage.createBucket(bucketName, {
+        public: false,
+        fileSizeLimit: 10 * 1024 * 1024,
+      });
     } catch {}
   }
 }
@@ -55,18 +66,12 @@ export async function POST(request: NextRequest) {
   try {
     // Check if Supabase is configured
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Database not configured' },
-        { status: 503 }
-      );
+      return NextResponse.json({ error: 'Database not configured' }, { status: 503 });
     }
     // Rate limiting
     const ip = getClientIp(request);
     if (isRateLimited(ip)) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { status: 429 }
-      );
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
     }
     const formData = await request.formData();
     let authUserId: string | null = null;
@@ -82,22 +87,20 @@ export async function POST(request: NextRequest) {
     } catch {}
     // Enforce: must be signed in AND verified
     if (!authUserId) {
-      return NextResponse.json(
-        { error: 'Please sign in to place an order' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Please sign in to place an order' }, { status: 401 });
     }
     if (!emailConfirmed) {
       return NextResponse.json(
         { error: 'Please verify your email before placing an order' },
-        { status: 403 }
+        { status: 403 },
       );
     }
-    
+
     // Extract form fields
     // Accept non-UUID serviceId by coercing to null (e.g., cart orders)
     const rawServiceId = (formData.get('serviceId') as string) || '';
-    const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+    const uuidRegex =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
     let service_id: string | null = uuidRegex.test(rawServiceId) ? rawServiceId : null;
     // If a UUID is provided but service doesn't exist, coerce to null to avoid FK failure
     if (service_id) {
@@ -121,21 +124,21 @@ export async function POST(request: NextRequest) {
       provider_name: formData.get('providerName') as string,
       full_name: formData.get('fullName') as string,
       phone: formData.get('phone') as string,
-      email: formData.get('email') as string || null,
-      whatsapp_number: formData.get('whatsappNumber') as string || null,
+      email: (formData.get('email') as string) || null,
+      whatsapp_number: (formData.get('whatsappNumber') as string) || null,
       requirements: formData.get('requirements') as string,
       budget_range: formData.get('budgetRange') as string,
       delivery_preference: formData.get('deliveryPreference') as string,
-      additional_notes: formData.get('additionalNotes') as string || null,
-      cart_items: formData.get('cartItems') as string || null,
+      additional_notes: (formData.get('additionalNotes') as string) || null,
+      cart_items: (formData.get('cartItems') as string) || null,
       status: 'pending',
       user_id: authUserId,
       // Also populate legacy fields for compatibility
       customer_name: formData.get('fullName') as string,
       customer_phone: formData.get('phone') as string,
-      customer_email: formData.get('email') as string || null,
+      customer_email: (formData.get('email') as string) || null,
       message: formData.get('requirements') as string,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
 
     // Handle file uploads
@@ -159,7 +162,7 @@ export async function POST(request: NextRequest) {
             path: null,
             size: file.size,
             type: file.type,
-            error: 'Unsupported file type'
+            error: 'Unsupported file type',
           });
           fileIndex++;
           continue;
@@ -179,14 +182,14 @@ export async function POST(request: NextRequest) {
               path: null,
               size: file.size,
               type: file.type,
-              error: 'Storage bucket not configured'
+              error: 'Storage bucket not configured',
             });
           } else {
             files.push({
               name: file.name,
               path: uploadData.path,
               size: file.size,
-              type: file.type
+              type: file.type,
             });
           }
         } catch (error) {
@@ -196,7 +199,7 @@ export async function POST(request: NextRequest) {
             path: null,
             size: file.size,
             type: file.type,
-            error: 'Upload failed'
+            error: 'Upload failed',
           });
         }
       }
@@ -206,20 +209,19 @@ export async function POST(request: NextRequest) {
     // Insert booking into database
     const { data, error } = await supabase
       .from('bookings')
-      .insert([{
-        ...bookingData,
-        // Store files as JSON (JSONB column), not string
-        files: files.length > 0 ? files : null
-      }])
+      .insert([
+        {
+          ...bookingData,
+          // Store files as JSON (JSONB column), not string
+          files: files.length > 0 ? files : null,
+        },
+      ])
       .select()
       .single();
 
     if (error) {
       console.error('Database error:', error);
-      return NextResponse.json(
-        { error: 'Failed to create booking' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create booking' }, { status: 500 });
     }
 
     // WhatsApp notification URL for admin
@@ -229,20 +231,16 @@ export async function POST(request: NextRequest) {
       : null;
 
     return NextResponse.json(
-      { 
-        success: true, 
+      {
+        success: true,
         booking: data,
         message: 'Booking created successfully',
-        adminWhatsappUrl: adminWhatsappUrl
+        adminWhatsappUrl: adminWhatsappUrl,
       },
-      { status: 201 }
+      { status: 201 },
     );
-
   } catch (error) {
     console.error('API error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

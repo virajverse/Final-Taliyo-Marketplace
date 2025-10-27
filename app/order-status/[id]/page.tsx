@@ -26,7 +26,11 @@ export default function OrderStatusPage() {
   const [booking, setBooking] = useState<BookingRow | null>(null);
   const [loading, setLoading] = useState(true);
   const { user: authUser } = useAuth();
-  const userEmail = authUser?.email || (typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('userData') || 'null')?.email || '') : '');
+  const userEmail =
+    authUser?.email ||
+    (typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('userData') || 'null')?.email || ''
+      : '');
 
   // 7-step timeline
   const steps = [
@@ -50,7 +54,8 @@ export default function OrderStatusPage() {
           router.push('/login');
           return;
         }
-        let data: any = null; let error: any = null;
+        let data: any = null;
+        let error: any = null;
         if (uid) {
           const { data: row, error: err } = await supabase
             .from('bookings')
@@ -58,7 +63,8 @@ export default function OrderStatusPage() {
             .eq('id', params.id as string)
             .eq('user_id', uid)
             .single();
-          data = row; error = err;
+          data = row;
+          error = err;
           // If not found via user_id (legacy row), fallback to email
           if ((error || !data) && userEmail) {
             const { data: row2, error: err2 } = await supabase
@@ -67,7 +73,8 @@ export default function OrderStatusPage() {
               .eq('id', params.id as string)
               .or(`email.eq.${userEmail},customer_email.eq.${userEmail}`)
               .single();
-            data = row2; error = err2;
+            data = row2;
+            error = err2;
           }
         } else {
           const { data: row, error: err } = await supabase
@@ -76,7 +83,8 @@ export default function OrderStatusPage() {
             .eq('id', params.id as string)
             .or(`email.eq.${userEmail},customer_email.eq.${userEmail}`)
             .single();
-          data = row; error = err;
+          data = row;
+          error = err;
         }
         if (error) throw error;
         if (!mounted) return;
@@ -91,7 +99,11 @@ export default function OrderStatusPage() {
 
     const channel = supabase
       .channel('order_status_page')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings', filter: `id=eq.${params.id}` }, () => load())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings', filter: `id=eq.${params.id}` },
+        () => load(),
+      )
       .subscribe();
 
     return () => {
@@ -103,7 +115,9 @@ export default function OrderStatusPage() {
   const timeline = useMemo(() => {
     try {
       const notes = booking?.additional_notes ? JSON.parse(booking.additional_notes) : {};
-      return Array.isArray(notes?.timeline) ? notes.timeline as Array<{ step: number; label: string; at: string; note?: string; }> : [];
+      return Array.isArray(notes?.timeline)
+        ? (notes.timeline as Array<{ step: number; label: string; at: string; note?: string }>)
+        : [];
     } catch {
       return [];
     }
@@ -113,20 +127,26 @@ export default function OrderStatusPage() {
     try {
       const f = (booking as any)?.files;
       return Array.isArray(f)
-        ? f.filter((x: any) => x && typeof x.path === 'string').map((x: any) => ({ name: x.name || x.path, path: x.path }))
+        ? f
+            .filter((x: any) => x && typeof x.path === 'string')
+            .map((x: any) => ({ name: x.name || x.path, path: x.path }))
         : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   }, [booking]);
 
   const downloadAttachment = async (path: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token || !booking?.id) return;
       const res = await fetch('/api/storage/sign-url', {
         method: 'POST',
         headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ bookingId: booking.id, path, expiresIn: 900 })
+        body: JSON.stringify({ bookingId: booking.id, path, expiresIn: 900 }),
       });
       const j = await res.json();
       if (res.ok && j?.url) window.open(j.url, '_blank');
@@ -187,7 +207,9 @@ export default function OrderStatusPage() {
               <AlertCircle className="w-5 h-5" />
               <span>Order not found</span>
             </div>
-            <button onClick={() => router.back()} className="mt-4 text-blue-600">Go Back</button>
+            <button onClick={() => router.back()} className="mt-4 text-blue-600">
+              Go Back
+            </button>
           </div>
         </div>
         <BottomNavigation />
@@ -195,7 +217,10 @@ export default function OrderStatusPage() {
     );
   }
 
-  const total = cartItems.reduce((sum: number, it: any) => sum + ((Number(it?.price_min) || 0) * (it?.quantity || 1)), 0);
+  const total = cartItems.reduce(
+    (sum: number, it: any) => sum + (Number(it?.price_min) || 0) * (it?.quantity || 1),
+    0,
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -209,7 +234,9 @@ export default function OrderStatusPage() {
           </div>
           <div className="sm:text-right">
             <p className="text-sm text-gray-600">Placed on</p>
-            <p className="text-sm font-medium">{booking.created_at ? new Date(booking.created_at).toLocaleString() : '-'}</p>
+            <p className="text-sm font-medium">
+              {booking.created_at ? new Date(booking.created_at).toLocaleString() : '-'}
+            </p>
           </div>
         </div>
 
@@ -220,17 +247,30 @@ export default function OrderStatusPage() {
             <div className="overflow-x-auto pb-2">
               <div className="min-w-[560px] sm:min-w-0 px-1">
                 <div className="relative h-2 bg-gray-200 rounded-full">
-                  <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-green-500 rounded-full" style={{ width: `${progressPct}%` }} />
+                  <div
+                    className="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-500 to-green-500 rounded-full"
+                    style={{ width: `${progressPct}%` }}
+                  />
                 </div>
                 <div className="mt-4 grid grid-cols-7 gap-2">
                   {steps.map((st, idx) => {
                     const active = idx <= currentStepIndex;
                     return (
                       <div key={st.key} className="flex flex-col items-center text-center">
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 ${active ? 'border-green-500 bg-green-50 text-green-600' : 'border-gray-300 bg-white text-gray-400'}`}>
-                          {active ? <CheckCircle className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                        <div
+                          className={`w-7 h-7 rounded-full flex items-center justify-center border-2 ${active ? 'border-green-500 bg-green-50 text-green-600' : 'border-gray-300 bg-white text-gray-400'}`}
+                        >
+                          {active ? (
+                            <CheckCircle className="w-4 h-4" />
+                          ) : (
+                            <Clock className="w-4 h-4" />
+                          )}
                         </div>
-                        <span className={`mt-2 text-[11px] sm:text-xs leading-tight ${active ? 'text-green-700' : 'text-gray-600'}`}>{st.label}</span>
+                        <span
+                          className={`mt-2 text-[11px] sm:text-xs leading-tight ${active ? 'text-green-700' : 'text-gray-600'}`}
+                        >
+                          {st.label}
+                        </span>
                       </div>
                     );
                   })}
@@ -264,7 +304,12 @@ export default function OrderStatusPage() {
               {attachments.map((f: any, idx: number) => (
                 <div key={idx} className="flex items-center justify-between">
                   <div className="truncate pr-2">{f.name}</div>
-                  <button onClick={() => downloadAttachment(f.path)} className="text-blue-600 hover:underline">Download</button>
+                  <button
+                    onClick={() => downloadAttachment(f.path)}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Download
+                  </button>
                 </div>
               ))}
             </div>
@@ -277,8 +322,12 @@ export default function OrderStatusPage() {
           <div className="space-y-2 text-sm">
             {cartItems.map((it: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between">
-                <div className="truncate pr-2">{it.title} × {it.quantity || 1}</div>
-                <div className="font-medium">₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}</div>
+                <div className="truncate pr-2">
+                  {it.title} × {it.quantity || 1}
+                </div>
+                <div className="font-medium">
+                  ₹{((Number(it?.price_min) || 0) * (it?.quantity || 1)).toLocaleString()}
+                </div>
               </div>
             ))}
             <div className="border-t border-gray-200 pt-2 flex items-center justify-between text-sm font-semibold">

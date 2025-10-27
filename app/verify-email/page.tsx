@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Header from "@/components/Header";
-import BottomNavigation from "@/components/BottomNavigation";
-import { supabase } from "@/lib/supabaseClient";
-import Link from "next/link";
+import { useEffect, useState } from 'react';
+import Header from '@/components/Header';
+import BottomNavigation from '@/components/BottomNavigation';
+import { supabase } from '@/lib/supabaseClient';
+import Link from 'next/link';
 
 export default function VerifyEmail() {
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
   const [verified, setVerified] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -25,15 +25,22 @@ export default function VerifyEmail() {
   }, []);
 
   const resend = async () => {
-    if (!email) { setMessage("Enter your email first"); return; }
+    if (!email) {
+      setMessage('Enter your email first');
+      return;
+    }
     setLoading(true);
-    setMessage("");
+    setMessage('');
     try {
       const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      await supabase.auth.resend({ type: "signup", email, options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : undefined as any });
-      setMessage("Verification email sent. Please check your inbox.");
+      await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: origin ? { emailRedirectTo: `${origin}/auth/callback` } : (undefined as any),
+      });
+      setMessage('Verification email sent. Please check your inbox.');
     } catch {
-      setMessage("Could not send verification email.");
+      setMessage('Could not send verification email.');
     } finally {
       setLoading(false);
     }
@@ -48,11 +55,15 @@ export default function VerifyEmail() {
           {verified ? (
             <div className="space-y-3">
               <p className="text-green-700">Your email is already verified.</p>
-              <Link href="/profile" className="text-blue-600 font-medium">Go to Profile</Link>
+              <Link href="/profile" className="text-blue-600 font-medium">
+                Go to Profile
+              </Link>
             </div>
           ) : (
             <>
-              <p className="text-gray-700 mb-4">Enter your email and resend the verification link.</p>
+              <p className="text-gray-700 mb-4">
+                Enter your email and resend the verification link.
+              </p>
               <input
                 type="email"
                 value={email}
@@ -65,11 +76,9 @@ export default function VerifyEmail() {
                 disabled={loading}
                 className="w-full bg-blue-500 text-white py-3 rounded-lg font-medium hover:bg-blue-600 disabled:opacity-50"
               >
-                {loading ? "Sending..." : "Resend verification email"}
+                {loading ? 'Sending...' : 'Resend verification email'}
               </button>
-              {message && (
-                <div className="mt-3 text-center text-sm text-gray-700">{message}</div>
-              )}
+              {message && <div className="mt-3 text-center text-sm text-gray-700">{message}</div>}
             </>
           )}
         </div>

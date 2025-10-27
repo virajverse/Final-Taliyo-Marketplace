@@ -44,7 +44,7 @@ function SearchResultsContent() {
   const [filters, setFilters] = useState({
     priceRange: 'all',
     serviceType: 'all',
-    rating: 'all'
+    rating: 'all',
   });
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
   const { user, redirectToLogin } = useAuth();
@@ -56,27 +56,37 @@ function SearchResultsContent() {
   useEffect(() => {
     const channel = supabase
       .channel('search_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => searchServices(searchQuery || query))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () =>
+        searchServices(searchQuery || query),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [searchQuery, query]);
 
   useEffect(() => {
     const load = async () => {
-      if (!user?.id) { setWishlistIds(new Set()); return; }
-      const { data } = await supabase
-        .from('wishlists')
-        .select('service_id')
-        .eq('user_id', user.id);
+      if (!user?.id) {
+        setWishlistIds(new Set());
+        return;
+      }
+      const { data } = await supabase.from('wishlists').select('service_id').eq('user_id', user.id);
       setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
     };
     load();
     if (!user?.id) return;
     const ch = supabase
       .channel('search_wishlist_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` },
+        () => load(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user?.id]);
 
   const searchServices = async (searchTerm: string) => {
@@ -110,14 +120,29 @@ function SearchResultsContent() {
   };
 
   const handleToggleWishlist = async (serviceId: string) => {
-    if (!user?.id) { redirectToLogin(); return; }
+    if (!user?.id) {
+      redirectToLogin();
+      return;
+    }
     try {
       if (wishlistIds.has(serviceId)) {
-        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
-        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+        await supabase
+          .from('wishlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('service_id', serviceId);
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.delete(serviceId);
+          return n;
+        });
       } else {
         await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
-        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.add(serviceId);
+          return n;
+        });
       }
     } catch {}
   };
@@ -131,14 +156,14 @@ function SearchResultsContent() {
     setFilters({
       priceRange: 'all',
       serviceType: 'all',
-      rating: 'all'
+      rating: 'all',
     });
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Search Header */}
         <div className="mb-6">
@@ -200,7 +225,7 @@ function SearchResultsContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
                 <select
                   value={filters.priceRange}
-                  onChange={(e) => setFilters({...filters, priceRange: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, priceRange: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Prices</option>
@@ -215,7 +240,7 @@ function SearchResultsContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Service Type</label>
                 <select
                   value={filters.serviceType}
-                  onChange={(e) => setFilters({...filters, serviceType: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, serviceType: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Types</option>
@@ -229,7 +254,7 @@ function SearchResultsContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
                 <select
                   value={filters.rating}
-                  onChange={(e) => setFilters({...filters, rating: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, rating: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Ratings</option>
@@ -275,10 +300,9 @@ function SearchResultsContent() {
               {query ? 'No services found' : 'Start searching'}
             </h3>
             <p className="text-gray-600">
-              {query 
-                ? `Try different keywords or check your spelling` 
-                : 'Enter keywords to find services you need'
-              }
+              {query
+                ? `Try different keywords or check your spelling`
+                : 'Enter keywords to find services you need'}
             </p>
           </div>
         ) : (
@@ -302,14 +326,16 @@ function SearchResultsContent() {
 
 export default function SearchResults() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading search...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading search...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <SearchResultsContent />
     </Suspense>
   );

@@ -30,10 +30,22 @@ export default async function Categories() {
 
   const getIconName = (iconName: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
-      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
-      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
-      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
+      web: 'web',
+      mobile: 'mobile',
+      design: 'design',
+      home: 'home',
+      repair: 'package',
+      electrical: 'package',
+      garden: 'package',
+      education: 'package',
+      beauty: 'beauty',
+      fitness: 'package',
+      photography: 'photography',
+      writing: 'package',
+      music: 'music',
+      cooking: 'package',
+      marketing: 'marketing',
+      consulting: 'consulting',
     };
     return iconMap[iconName] || 'package';
   };
@@ -41,7 +53,7 @@ export default async function Categories() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Categories</h2>
@@ -63,22 +75,18 @@ export default async function Categories() {
                 className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
               >
                 <div className="mb-3">
-                  <IconMapper 
-                    iconName={category.icon ? getIconName(category.icon) : 'package'} 
+                  <IconMapper
+                    iconName={category.icon ? getIconName(category.icon) : 'package'}
                     size={32}
                     animated={true}
                   />
                 </div>
-                <h3 className="font-semibold text-gray-900 text-sm mb-1">
-                  {category.name}
-                </h3>
+                <h3 className="font-semibold text-gray-900 text-sm mb-1">{category.name}</h3>
                 <p className="text-xs text-gray-600 mb-3 line-clamp-2">
                   {category.description || 'Explore services in this category'}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-blue-600 font-medium">
-                    View services
-                  </span>
+                  <span className="text-xs text-blue-600 font-medium">View services</span>
                   <ArrowRight className="w-4 h-4 text-gray-400" />
                 </div>
               </Link>

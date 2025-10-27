@@ -47,17 +47,27 @@ interface Category {
   updated_at: string;
 }
 
-export default function Home({ initialFeaturedServices = [], initialCategories = [], initialBanners = [] as any[] }: { initialFeaturedServices?: Service[]; initialCategories?: Category[]; initialBanners?: any[]; }) {
+export default function Home({
+  initialFeaturedServices = [],
+  initialCategories = [],
+  initialBanners = [] as any[],
+}: {
+  initialFeaturedServices?: Service[];
+  initialCategories?: Category[];
+  initialBanners?: any[];
+}) {
   const [featuredServices, setFeaturedServices] = useState<Service[]>(initialFeaturedServices);
   const [popularCategories, setPopularCategories] = useState<Category[]>(initialCategories);
-  const [loading, setLoading] = useState(!(initialFeaturedServices.length && initialCategories.length));
+  const [loading, setLoading] = useState(
+    !(initialFeaturedServices.length && initialCategories.length),
+  );
   const [cartCount, setCartCount] = useState(0);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
-  
+
   const { user, isLoggedIn, redirectToLogin } = useAuth();
-  
+
   useEffect(() => {
-    fetchData({ silent: (initialFeaturedServices.length > 0 || initialCategories.length > 0) });
+    fetchData({ silent: initialFeaturedServices.length > 0 || initialCategories.length > 0 });
   }, [initialFeaturedServices.length, initialCategories.length]);
 
   useEffect(() => {
@@ -76,28 +86,40 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
     if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase
       .channel('home_realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => fetchData({ silent: true }))
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => fetchData({ silent: true }))
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () =>
+        fetchData({ silent: true }),
+      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () =>
+        fetchData({ silent: true }),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
     const load = async () => {
-      if (!user?.id) { setWishlistIds(new Set()); return; }
-      const { data } = await supabase
-        .from('wishlists')
-        .select('service_id')
-        .eq('user_id', user.id);
+      if (!user?.id) {
+        setWishlistIds(new Set());
+        return;
+      }
+      const { data } = await supabase.from('wishlists').select('service_id').eq('user_id', user.id);
       setWishlistIds(new Set((data || []).map((r: any) => r.service_id)));
     };
     load();
     if (!user?.id) return;
     const ch = supabase
       .channel('home_wishlist_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` }, () => load())
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'wishlists', filter: `user_id=eq.${user.id}` },
+        () => load(),
+      )
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+    return () => {
+      supabase.removeChannel(ch);
+    };
   }, [user?.id]);
 
   const fetchData = async ({ silent = false }: { silent?: boolean } = {}) => {
@@ -106,7 +128,9 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
       const [{ data: services }, { data: categories }] = await Promise.all([
         supabase
           .from('services')
-          .select('id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at')
+          .select(
+            'id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at',
+          )
           .eq('is_active', true)
           .eq('is_featured', true)
           .order('created_at', { ascending: false })
@@ -116,7 +140,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
           .select('id,name,description,icon,slug,is_active,sort_order')
           .eq('is_active', true)
           .order('sort_order', { ascending: true })
-          .limit(8)
+          .limit(8),
       ]);
 
       if (services) setFeaturedServices(services as any);
@@ -133,24 +157,51 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
   };
 
   const handleToggleWishlist = async (serviceId: string) => {
-    if (!user?.id) { redirectToLogin(); return; }
+    if (!user?.id) {
+      redirectToLogin();
+      return;
+    }
     try {
       if (wishlistIds.has(serviceId)) {
-        await supabase.from('wishlists').delete().eq('user_id', user.id).eq('service_id', serviceId);
-        setWishlistIds(prev => { const n = new Set(prev); n.delete(serviceId); return n; });
+        await supabase
+          .from('wishlists')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('service_id', serviceId);
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.delete(serviceId);
+          return n;
+        });
       } else {
         await supabase.from('wishlists').insert([{ user_id: user.id, service_id: serviceId }]);
-        setWishlistIds(prev => { const n = new Set(prev); n.add(serviceId); return n; });
+        setWishlistIds((prev) => {
+          const n = new Set(prev);
+          n.add(serviceId);
+          return n;
+        });
       }
     } catch {}
   };
 
   const getIconName = (iconName: string) => {
     const iconMap: { [key: string]: string } = {
-      'web': 'web', 'mobile': 'mobile', 'design': 'design', 'home': 'home',
-      'repair': 'package', 'electrical': 'package', 'garden': 'package', 'education': 'package',
-      'beauty': 'beauty', 'fitness': 'package', 'photography': 'photography', 'writing': 'package',
-      'music': 'music', 'cooking': 'package', 'marketing': 'marketing', 'consulting': 'consulting',
+      web: 'web',
+      mobile: 'mobile',
+      design: 'design',
+      home: 'home',
+      repair: 'package',
+      electrical: 'package',
+      garden: 'package',
+      education: 'package',
+      beauty: 'beauty',
+      fitness: 'package',
+      photography: 'photography',
+      writing: 'package',
+      music: 'music',
+      cooking: 'package',
+      marketing: 'marketing',
+      consulting: 'consulting',
     };
     return iconMap[iconName] || 'package';
   };
@@ -159,10 +210,13 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
       redirectToLogin();
       return;
     }
-    
+
     const message = `Hi! I need help with Taliyo Marketplace services.`;
     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
-    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
+    if (!supportWhatsapp) {
+      console.warn('Support WhatsApp not configured');
+      return;
+    }
     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
@@ -189,7 +243,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
   return (
     <div className="min-h-screen bg-gray-50">
       <Header cartCount={cartCount} />
-      
+
       <div className="pt-4 pb-20 px-4">
         <BannerSlider initialBanners={initialBanners} />
 
@@ -215,7 +269,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
               See All
             </Link>
           </div>
-          
+
           {loading ? (
             <div className="grid grid-cols-2 gap-3">
               {[...Array(4)].map((_, i) => (
@@ -231,18 +285,14 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
                   className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
                 >
                   <div className="mb-2">
-                    <IconMapper 
-                      iconName={getIconName(category.icon || 'default')} 
+                    <IconMapper
+                      iconName={getIconName(category.icon || 'default')}
                       size={28}
                       animated={true}
                     />
                   </div>
-                  <h4 className="font-semibold text-gray-900 text-sm mb-1">
-                    {category.name}
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    View services
-                  </p>
+                  <h4 className="font-semibold text-gray-900 text-sm mb-1">{category.name}</h4>
+                  <p className="text-xs text-gray-600">View services</p>
                 </Link>
               ))}
             </div>
@@ -254,15 +304,11 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
             <TrendingUp className="w-5 h-5 text-orange-500" />
             <h3 className="text-lg font-bold text-gray-900">Featured Services</h3>
           </div>
-          
+
           {featuredServices.length === 0 ? (
             <div className="bg-white rounded-2xl p-8 text-center shadow-sm border border-gray-100">
               <div className="mb-4">
-                <IconMapper 
-                  iconName="search" 
-                  size={48}
-                  animated={true}
-                />
+                <IconMapper iconName="search" size={48} animated={true} />
               </div>
               <h4 className="font-semibold text-gray-900 mb-2">No Services Yet</h4>
               <p className="text-gray-600 text-sm">Services will appear here soon.</p>

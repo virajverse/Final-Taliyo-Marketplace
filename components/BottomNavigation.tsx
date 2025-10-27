@@ -7,7 +7,7 @@ import AnimatedIcon from './AnimatedIcon';
 
 export default function BottomNavigation() {
   const pathname = usePathname();
-  
+
   const navItems = [
     { path: '/', icon: HomeIcon, label: 'Home' },
     { path: '/categories', icon: CategoryIcon, label: 'Category' },
@@ -24,15 +24,13 @@ export default function BottomNavigation() {
         {navItems.map((item) => {
           const isActive = pathname === item.path;
           const IconComponent = item.icon;
-          
+
           return (
             <Link
               key={item.path}
               href={item.path}
               className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg transition-all duration-200 ${
-                isActive 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-500 hover:text-blue-600'
+                isActive ? 'text-blue-600 bg-blue-50' : 'text-gray-500 hover:text-blue-600'
               }`}
             >
               <div className="mb-1">

@@ -23,31 +23,38 @@ export default function Notifications() {
 
   const fetchNotifications = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) { setNotifications([]); return }
-      const res = await fetch('/api/notifications?limit=50', { headers: { Authorization: `Bearer ${token}` } })
-      if (!res.ok) throw new Error('failed')
-      const json = await res.json()
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setNotifications([]);
+        return;
+      }
+      const res = await fetch('/api/notifications?limit=50', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('failed');
+      const json = await res.json();
       const rows: Notification[] = (json.notifications || []).map((n: any) => ({
         id: n.id,
         type: n.type || 'system',
         title: n.title || 'Notification',
         message: n.message || '',
         is_read: n.is_read,
-        created_at: n.created_at
-      }))
-      setNotifications(rows)
+        created_at: n.created_at,
+      }));
+      setNotifications(rows);
     } catch {
-      setNotifications([])
+      setNotifications([]);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchNotifications()
-    const id = setInterval(fetchNotifications, 60000)
-    return () => clearInterval(id)
-  }, [])
+    fetchNotifications();
+    const id = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(id);
+  }, []);
 
   // Load current user id for realtime filtering
   useEffect(() => {
@@ -57,60 +64,94 @@ export default function Notifications() {
         setUserId(data.user?.id ?? null);
       } catch {}
     })();
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !navigator.onLine) return;
     const channel = supabase.channel('notifications_realtime');
     // Global notifications
-    channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=is.null' }, () => { fetchNotifications() });
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'notifications', filter: 'user_id=is.null' },
+      () => {
+        fetchNotifications();
+      },
+    );
     // Per-user notifications
     if (userId) {
       channel
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => { fetchNotifications() })
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` }, () => { fetchNotifications() });
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchNotifications();
+          },
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            fetchNotifications();
+          },
+        );
     }
     channel.subscribe();
-    return () => { supabase.removeChannel(channel) }
-  }, [userId])
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
 
   const markAsRead = (id: string) => {
     setNotifications((prev: Notification[]) =>
       prev.map((notification: Notification) =>
-        notification.id === id ? { ...notification, is_read: true } : notification
-      )
+        notification.id === id ? { ...notification, is_read: true } : notification,
+      ),
     );
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token) return
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
         await fetch('/api/notifications/mark-read', {
           method: 'POST',
           headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ ids: [id] })
-        })
+          body: JSON.stringify({ ids: [id] }),
+        });
       } catch {}
-    })()
+    })();
   };
 
   const markAllAsRead = () => {
-    const ids = notifications.map((n) => n.id)
+    const ids = notifications.map((n) => n.id);
     setNotifications((prev: Notification[]) =>
-      prev.map((notification: Notification) => ({ ...notification, is_read: true }))
+      prev.map((notification: Notification) => ({ ...notification, is_read: true })),
     );
     (async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token || ids.length === 0) return
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token || ids.length === 0) return;
         await fetch('/api/notifications/mark-read', {
           method: 'POST',
           headers: { 'content-type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ ids })
-        })
+          body: JSON.stringify({ ids }),
+        });
       } catch {}
-    })()
+    })();
   };
 
   const getNotificationIcon = (type: string) => {
@@ -133,15 +174,12 @@ export default function Notifications() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-6">
           <div className="flex items-center gap-4">
-            <Link
-              href="/profile"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <Link href="/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeft className="w-5 h-5 text-gray-600" />
             </Link>
             <div>
@@ -153,7 +191,7 @@ export default function Notifications() {
               )}
             </div>
           </div>
-          
+
           {unreadCount > 0 && (
             <button
               onClick={markAllAsRead}
@@ -176,28 +214,32 @@ export default function Notifications() {
                 }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 mt-1">
-                    {getNotificationIcon(notification.type)}
-                  </div>
-                  
+                  <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className={`font-medium ${
-                        notification.is_read ? 'text-gray-900' : 'text-gray-900 font-semibold'
-                      }`}>
+                      <h3
+                        className={`font-medium ${
+                          notification.is_read ? 'text-gray-900' : 'text-gray-900 font-semibold'
+                        }`}
+                      >
                         {notification.title}
                       </h3>
                       <span className="text-xs text-gray-500 flex-shrink-0">
-                        {notification.created_at ? new Date(notification.created_at).toLocaleString() : ''}
+                        {notification.created_at
+                          ? new Date(notification.created_at).toLocaleString()
+                          : ''}
                       </span>
                     </div>
-                    
-                    <p className={`text-sm mt-1 ${
-                      notification.is_read ? 'text-gray-600' : 'text-gray-700'
-                    }`}>
+
+                    <p
+                      className={`text-sm mt-1 ${
+                        notification.is_read ? 'text-gray-600' : 'text-gray-700'
+                      }`}
+                    >
                       {notification.message}
                     </p>
-                    
+
                     {!notification.is_read && (
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
                     )}

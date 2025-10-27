@@ -7,15 +7,7 @@ import BottomNavigation from '@/components/BottomNavigation';
 import { supabase } from '@/lib/supabaseClient';
 import { useToast } from '@/components/ToastProvider';
 
-import { 
-  ArrowLeft, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  User,
-  Phone
-} from 'lucide-react';
+import { ArrowLeft, Mail, Lock, Eye, EyeOff, User, Phone } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Login() {
@@ -27,7 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [loginForm, setLoginForm] = useState({
     email: '',
-    password: ''
+    password: '',
   });
   const [rememberMe, setRememberMe] = useState(true);
 
@@ -36,20 +28,45 @@ export default function Login() {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
 
-  const showToastMessage = (message: string) => { toast.info(message); };
-  
+  const showToastMessage = (message: string) => {
+    toast.info(message);
+  };
+
   const isDisposableEmail = (email: string) => {
     const domain = email.split('@')[1]?.toLowerCase() || '';
     if (!domain) return true;
     const block = [
-      'tempmail.com','10minutemail.com','guerrillamail.com','sharklasers.com','mailinator.com','yopmail.com','trashmail.com','discard.email','getnada.com','nada.ltd','maildrop.cc','mintemail.com','spambog.com','moakt.com','fakeinbox.com','temporary-mail.net','temp-mail.io','mytemp.email','emailondeck.com','throwawaymail.com','inboxkitten.com','mail7.io','tmails.net','tmpmail.org'
+      'tempmail.com',
+      '10minutemail.com',
+      'guerrillamail.com',
+      'sharklasers.com',
+      'mailinator.com',
+      'yopmail.com',
+      'trashmail.com',
+      'discard.email',
+      'getnada.com',
+      'nada.ltd',
+      'maildrop.cc',
+      'mintemail.com',
+      'spambog.com',
+      'moakt.com',
+      'fakeinbox.com',
+      'temporary-mail.net',
+      'temp-mail.io',
+      'mytemp.email',
+      'emailondeck.com',
+      'throwawaymail.com',
+      'inboxkitten.com',
+      'mail7.io',
+      'tmails.net',
+      'tmpmail.org',
     ];
-    return block.some(b => domain === b || domain.endsWith('.' + b));
+    return block.some((b) => domain === b || domain.endsWith('.' + b));
   };
-  
+
   const handleResetPassword = async () => {
     if (!loginForm.email) {
       toast.info('Enter your email above first');
@@ -69,7 +86,7 @@ export default function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
+
     // Validate form
     if (!loginForm.email || !loginForm.password) {
       toast.info('Please fill all fields');
@@ -107,20 +124,29 @@ export default function Login() {
       const { data } = await supabase.auth.getUser();
       const verified = !!data.user?.email_confirmed_at;
       if (!verified) {
-        try { if (typeof window !== 'undefined') localStorage.setItem('pendingVerifyEmail', loginForm.email); } catch {}
+        try {
+          if (typeof window !== 'undefined')
+            localStorage.setItem('pendingVerifyEmail', loginForm.email);
+        } catch {}
         await supabase.auth.signOut();
         toast.info('Please verify your email first. Check your inbox.');
       } else {
         toast.success('Login successful!');
         try {
           if (typeof document !== 'undefined') {
-            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            const secure =
+              typeof window !== 'undefined' && window.location.protocol === 'https:'
+                ? '; Secure'
+                : '';
             document.cookie = `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`;
           }
         } catch {}
         const nextParam = searchParams?.get('next') || '/';
-        const safeNext = typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/';
-        try { if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail'); } catch {}
+        const safeNext =
+          typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/';
+        try {
+          if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail');
+        } catch {}
         router.replace(safeNext);
       }
     } catch (error: any) {
@@ -183,14 +209,11 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="pt-4 pb-20 px-4">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-6">
-          <Link
-            href="/profile"
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
+          <Link href="/profile" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5 text-gray-600" />
           </Link>
           <div>
@@ -241,7 +264,7 @@ export default function Login() {
                     <input
                       type="email"
                       value={loginForm.email}
-                      onChange={(e) => setLoginForm({...loginForm, email: e.target.value})}
+                      onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Enter your email"
                       required
@@ -250,15 +273,13 @@ export default function Login() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={loginForm.password}
-                      onChange={(e) => setLoginForm({...loginForm, password: e.target.value})}
+                      onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Enter your password"
                       required
@@ -284,7 +305,11 @@ export default function Login() {
                   />
                   Remember me
                 </label>
-                <button type="button" onClick={handleResetPassword} className="text-blue-500 text-sm hover:text-blue-600">
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-blue-500 text-sm hover:text-blue-600"
+                >
                   Forgot your password?
                 </button>
               </div>
@@ -318,7 +343,7 @@ export default function Login() {
                     <input
                       type="text"
                       value={signupForm.name}
-                      onChange={(e) => setSignupForm({...signupForm, name: e.target.value})}
+                      onChange={(e) => setSignupForm({ ...signupForm, name: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Enter your full name"
                       required
@@ -335,7 +360,7 @@ export default function Login() {
                     <input
                       type="email"
                       value={signupForm.email}
-                      onChange={(e) => setSignupForm({...signupForm, email: e.target.value})}
+                      onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Enter your email"
                       required
@@ -352,7 +377,7 @@ export default function Login() {
                     <input
                       type="tel"
                       value={signupForm.phone}
-                      onChange={(e) => setSignupForm({...signupForm, phone: e.target.value})}
+                      onChange={(e) => setSignupForm({ ...signupForm, phone: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Enter your phone number"
                       required
@@ -360,17 +385,14 @@ export default function Login() {
                   </div>
                 </div>
 
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={signupForm.password}
-                      onChange={(e) => setSignupForm({...signupForm, password: e.target.value})}
+                      onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
                       className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Create a password"
                       required
@@ -394,7 +416,9 @@ export default function Login() {
                     <input
                       type={showPassword ? 'text' : 'password'}
                       value={signupForm.confirmPassword}
-                      onChange={(e) => setSignupForm({...signupForm, confirmPassword: e.target.value})}
+                      onChange={(e) =>
+                        setSignupForm({ ...signupForm, confirmPassword: e.target.value })
+                      }
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
                       placeholder="Confirm your password"
                       required
@@ -419,8 +443,7 @@ export default function Login() {
               </div>
             </div>
           </form>
-      )}
-
+        )}
       </div>
 
       <BottomNavigation />

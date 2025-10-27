@@ -22,8 +22,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     ];
 
     // अगर यूजर लॉग्ड इन नहीं है और प्रोटेक्टेड पेज पर है
-    const onProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
-    const hasAuthCookie = (typeof document !== 'undefined') && document.cookie.includes('taliyo_auth=1');
+    const onProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
+    const hasAuthCookie =
+      typeof document !== 'undefined' && document.cookie.includes('taliyo_auth=1');
     const isAuthed = isLoggedIn || hasAuthCookie;
     if (!isAuthed && onProtectedPath) {
       redirectToLogin();

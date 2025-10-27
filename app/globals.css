@@ -6,8 +6,6 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
-
-
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -64,7 +62,6 @@
   }
 }
 
-
 @layer base {
   * {
     @apply border-border;
@@ -76,13 +73,14 @@
 
 /* Hide top-level scrollbars but keep scrolling */
 @layer base {
-  html, body {
+  html,
+  body {
     -ms-overflow-style: none; /* IE and old Edge */
-    scrollbar-width: none;    /* Firefox */
+    scrollbar-width: none; /* Firefox */
   }
   html::-webkit-scrollbar,
   body::-webkit-scrollbar {
-    display: none;            /* Chrome, Safari */
+    display: none; /* Chrome, Safari */
   }
 }
 
@@ -90,9 +88,9 @@
 @layer utilities {
   .no-scrollbar {
     -ms-overflow-style: none; /* IE and old Edge */
-    scrollbar-width: none;    /* Firefox */
+    scrollbar-width: none; /* Firefox */
   }
   .no-scrollbar::-webkit-scrollbar {
-    display: none;            /* Chrome, Safari */
+    display: none; /* Chrome, Safari */
   }
 }

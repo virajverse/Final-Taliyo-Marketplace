@@ -37,7 +37,7 @@ self.addEventListener('fetch', (event) => {
   return new Response(body, {
     headers: {
       'content-type': 'application/javascript; charset=utf-8',
-      'cache-control': 'no-store'
+      'cache-control': 'no-store',
     },
   });
 }

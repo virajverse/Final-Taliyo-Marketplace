@@ -23,7 +23,9 @@ export function supabaseImageLoader({ src, width, quality }: ImageLoaderProps): 
         try {
           const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
           return url ? new URL(url).origin : '';
-        } catch { return ''; }
+        } catch {
+          return '';
+        }
       })();
       if (!base) return src;
       u = new URL(base + src);
@@ -32,7 +34,9 @@ export function supabaseImageLoader({ src, width, quality }: ImageLoaderProps): 
         try {
           const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
           return url ? new URL(url).origin : '';
-        } catch { return ''; }
+        } catch {
+          return '';
+        }
       })();
       if (!base) return src;
       u = new URL(base + '/' + src);

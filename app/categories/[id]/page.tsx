@@ -14,7 +14,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         .maybeSingle(),
       supabaseServer
         .from('services')
-        .select('id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at')
+        .select(
+          'id,title,description,price_min,price_max,price_type,location,is_remote,images,rating_average,rating_count,provider_name,provider_avatar,is_active,is_featured,created_at',
+        )
         .eq('category_id', id as string)
         .eq('is_active', true)
         .order('created_at', { ascending: false }),
