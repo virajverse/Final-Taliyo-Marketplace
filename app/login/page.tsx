@@ -112,6 +112,12 @@ export default function Login() {
         toast.info('Please verify your email first. Check your inbox.');
       } else {
         toast.success('Login successful!');
+        try {
+          if (typeof document !== 'undefined') {
+            const secure = (typeof window !== 'undefined' && window.location.protocol === 'https:') ? '; Secure' : '';
+            document.cookie = `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`;
+          }
+        } catch {}
         setTimeout(() => {
           const next = searchParams?.get('next');
           try { if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail'); } catch {}

@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import BottomNavigation from '@/components/BottomNavigation';
 import { useAuth } from '@/lib/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
+import { supabaseImageLoader, isSupabaseUrl } from '@/lib/supabaseImageLoader';
 import { useToast } from '@/components/ToastProvider';
 import { 
   User, 
@@ -380,40 +381,37 @@ export default function Profile() {
               </div>
             </div>
           ) : (
-          <>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-            <div className="relative">
-              <Image
-                src={user?.avatar || "https://picsum.photos/seed/profile-fallback/150/150"}
-                alt="Profile"
-                width={64}
-                height={64}
-                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow"
-              />
-              <button className="absolute -bottom-1 -right-1 bg-blue-500 text-white p-1 rounded-full shadow hover:bg-blue-600 transition-colors">
-                <Camera className="w-3 h-3" />
-              </button>
-            </div>
-            
-            <div className="flex-1">
-              <>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
-                  {emailVerified ? (
-                    <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
-                  ) : (
-                    <span className="inline-flex items-center gap-2 text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
-                      {emailPending ? 'Verification Pending' : 'Not Verified'}
-                      <button type="button" onClick={resendVerificationEmail} className="underline text-blue-700">Send email</button>
-                    </span>
-                  )}
+            <>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                <div className="relative">
+                  <Image
+                    src={user?.avatar || "https://picsum.photos/seed/profile-fallback/150/150"}
+                    alt="Profile"
+                    width={64}
+                    height={64}
+                    loader={isSupabaseUrl(user?.avatar || '') ? supabaseImageLoader : undefined}
+                    className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-white shadow"
+                  />
                 </div>
-              </>
-          </div>
-            
-          </div>
-          </>
+                
+                <div className="flex-1">
+                  <>
+                    <h1 className="text-lg sm:text-xl font-bold text-gray-900">{user?.name || 'User'}</h1>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-gray-600 text-sm">{user?.email || 'user@example.com'}</span>
+                      {emailVerified ? (
+                        <span className="inline-flex items-center text-[11px] px-2 py-0.5 rounded-full bg-green-100 text-green-700">Verified</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 text-[11px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
+                          {emailPending ? 'Verification Pending' : 'Not Verified'}
+                          <button type="button" onClick={resendVerificationEmail} className="underline text-blue-700">Send email</button>
+                        </span>
+                      )}
+                    </div>
+                  </>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
