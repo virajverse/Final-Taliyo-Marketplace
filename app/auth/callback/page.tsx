@@ -15,17 +15,19 @@ export default function AuthCallback() {
     let unsub: any;
     (async () => {
       try {
+        const nextParam = search?.get('next') || '/profile';
+        const safeNext = typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/profile';
         // Ensure the session in the URL is captured (detectSessionInUrl is enabled in client)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setMessage('Sign-in complete. Redirecting...');
-          setTimeout(() => router.replace('/profile'), 800);
+          router.replace(safeNext);
         } else {
           // Listen for eventual session set by URL hash processing
           const { data } = supabase.auth.onAuthStateChange((event, sess) => {
             if (sess) {
               setMessage('Sign-in complete. Redirecting...');
-              setTimeout(() => router.replace('/profile'), 800);
+              router.replace(safeNext);
             }
           });
           unsub = data.subscription;

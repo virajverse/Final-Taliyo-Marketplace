@@ -18,7 +18,7 @@
         "name": "next"
       }
     ],
-    "types": ["node", "react", "react-dom", "next"],
+    "types": ["node", "react", "react-dom", "next", "jest"],
     "paths": {
       "@/*": ["./*"]
     }

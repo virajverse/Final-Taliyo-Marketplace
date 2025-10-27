@@ -14,7 +14,8 @@ export function middleware(req: NextRequest) {
   if (hasAuthCookie) return NextResponse.next()
 
   const loginUrl = new URL('/login', req.url)
-  loginUrl.searchParams.set('next', pathname)
+  const nextWithQuery = pathname + (req.nextUrl.search || '')
+  loginUrl.searchParams.set('next', nextWithQuery)
   return NextResponse.redirect(loginUrl)
 }
 

@@ -56,12 +56,6 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
   
   const { user, isLoggedIn, redirectToLogin } = useAuth();
   
-  const handleWhatsAppClick = () => {
-    const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
-    if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
-    window.open(`https://wa.me/${supportWhatsapp}`, '_blank');
-  };
-
   useEffect(() => {
     fetchData({ silent: (initialFeaturedServices.length > 0 || initialCategories.length > 0) });
   }, [initialFeaturedServices.length, initialCategories.length]);

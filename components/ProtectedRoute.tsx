@@ -16,10 +16,16 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
       '/profile',
       '/orders',
       '/settings',
+      '/notifications',
+      '/reviews',
+      '/order-status',
     ];
 
     // अगर यूजर लॉग्ड इन नहीं है और प्रोटेक्टेड पेज पर है
-    if (!isLoggedIn && protectedPaths.some(path => pathname.startsWith(path))) {
+    const onProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
+    const hasAuthCookie = (typeof document !== 'undefined') && document.cookie.includes('taliyo_auth=1');
+    const isAuthed = isLoggedIn || hasAuthCookie;
+    if (!isAuthed && onProtectedPath) {
       redirectToLogin();
     }
   }, [isLoggedIn, authLoading, pathname, redirectToLogin]);

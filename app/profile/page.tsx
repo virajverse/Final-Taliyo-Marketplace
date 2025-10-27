@@ -314,13 +314,13 @@ export default function Profile() {
               
               <div className="space-y-3">
                 <Link
-                  href="/login"
+                  href="/login?next=/profile"
                   className="w-full bg-gradient-to-r from-blue-500 to-green-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-200 text-center block"
                 >
                   Sign In
                 </Link>
                 <Link
-                  href="/login"
+                  href="/login?next=/profile"
                   className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-full font-medium hover:bg-gray-50 transition-colors text-center block"
                 >
                   Create Account

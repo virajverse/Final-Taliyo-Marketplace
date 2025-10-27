@@ -27,7 +27,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Taliyo Marketplace" />
         <meta name="mobile-web-app-capable" content="yes" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        <link rel="apple-touch-icon" href="https://placehold.co/180x180/png" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className={`no-scrollbar overflow-x-hidden ${inter.className}`}>
         <ToastProvider>

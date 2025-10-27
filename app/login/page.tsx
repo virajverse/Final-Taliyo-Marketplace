@@ -118,11 +118,10 @@ export default function Login() {
             document.cookie = `taliyo_auth=1; Path=/; Max-Age=2592000; SameSite=Lax${secure}`;
           }
         } catch {}
-        setTimeout(() => {
-          const next = searchParams?.get('next');
-          try { if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail'); } catch {}
-          router.push(next || '/');
-        }, 800);
+        const nextParam = searchParams?.get('next') || '/';
+        const safeNext = typeof nextParam === 'string' && nextParam.startsWith('/') ? nextParam : '/';
+        try { if (typeof window !== 'undefined') localStorage.removeItem('pendingVerifyEmail'); } catch {}
+        router.replace(safeNext);
       }
     } catch (error: any) {
       const msg = (error?.message || '').toString().toLowerCase();

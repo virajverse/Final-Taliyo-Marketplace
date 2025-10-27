@@ -1,6 +1,6 @@
 export async function GET() {
   const body = `
-const CACHE = 'taliyo-pwa-v1';
+const CACHE = 'taliyo-marketplace-pwa-v1';
 const ASSETS = [
   '/',
   '/manifest.webmanifest'

@@ -37,7 +37,7 @@ export default function ResetPassword() {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setMessage('Password updated. Redirecting to sign in...');
-      setTimeout(() => router.push('/login'), 1200);
+      setTimeout(() => router.replace('/login'), 1200);
     } catch (e) {
       setMessage('Failed to update password. Please try again.');
     } finally {

@@ -42,15 +42,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, service })
   const [sameWhatsApp, setSameWhatsApp] = useState(true);
   const [cartPreview, setCartPreview] = useState<any[]>([]);
   const isCustom = (service?.id === 'custom') || (String(service?.title || '').toLowerCase().includes('custom'));
-
-  // अगर यूजर लॉग्ड इन नहीं है तो लॉगिन पेज पर रीडायरेक्ट करें
-  const handleAction = () => {
-    if (!isLoggedIn) {
-      onClose();
-      redirectToLogin();
-      return;
-    }
-  };
   
   // लॉगिन यूजर का डाटा फॉर्म में ऑटोफिल करें
   useEffect(() => {
