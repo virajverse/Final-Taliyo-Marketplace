@@ -309,7 +309,7 @@ export default function Profile() {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center text-white text-2xl mx-auto mb-4">
                 <User className="w-10 h-10" />
               </div>
-              <h3 className="font-bold text-gray-900 text-xl mb-2">Welcome to Taliyo!</h3>
+              <h3 className="font-bold text-gray-900 text-xl mb-2">Welcome to Taliyo Marketplace!</h3>
               <p className="text-gray-600 mb-6">Sign in to book services, save favorites, and track your orders</p>
               
               <div className="space-y-3">

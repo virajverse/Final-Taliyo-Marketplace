@@ -100,11 +100,11 @@ export default function Wishlist() {
   const handleShare = () => {
     const message = `Check out my wishlist on Taliyo Marketplace:\n\n${wishlistItems.map(item => 
       `${item.title} - ₹${item.price_min?.toLocaleString()}`
-    ).join('\n')}\n\nDiscover amazing services at Taliyo!`;
+    ).join('\n')}\n\nDiscover amazing services at Taliyo Marketplace!`;
     
     if (navigator.share) {
       navigator.share({
-        title: 'My Taliyo Wishlist',
+        title: 'My Taliyo Marketplace Wishlist',
         text: message,
       });
     } else {

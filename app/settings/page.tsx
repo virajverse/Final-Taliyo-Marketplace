@@ -11,7 +11,6 @@ import {
   User, 
   Bell, 
   Globe, 
-  Moon, 
   Shield, 
   CreditCard,
   Phone,
@@ -180,20 +179,7 @@ export default function Settings() {
     } catch {}
   };
 
-  // Apply theme immediately when dark mode changes
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    try {
-      const el = document.documentElement;
-      if (settings.preferences.darkMode) {
-        el.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-      } else {
-        el.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-      }
-    } catch {}
-  }, [settings.preferences.darkMode]);
+  
 
   const settingSections: { title: string; items: SettingItem[] }[] = [
     {
@@ -269,13 +255,6 @@ export default function Settings() {
           value: settings.preferences.language,
           href: '/settings/language',
           showArrow: true
-        },
-        {
-          icon: Moon,
-          label: 'Dark Mode',
-          value: settings.preferences.darkMode,
-          type: 'toggle',
-          onChange: (value: boolean) => updateSetting('preferences', 'darkMode', value)
         },
         {
           icon: CreditCard,

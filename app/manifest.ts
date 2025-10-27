@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Taliyo Marketplace",
-    short_name: "Taliyo",
+    short_name: "Taliyo Marketplace",
     description: "Services marketplace PWA.",
     start_url: "/",
     scope: "/",

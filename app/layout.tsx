@@ -21,12 +21,11 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#2563eb" />
-        <meta name="application-name" content="Taliyo" />
+        <meta name="application-name" content="Taliyo Marketplace" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Taliyo" />
+        <meta name="apple-mobile-web-app-title" content="Taliyo Marketplace" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <script dangerouslySetInnerHTML={{__html: `try{var t=localStorage.getItem('theme');var m=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;var d=(t==='dark')||(!t&&m);var el=document.documentElement;d?el.classList.add('dark'):el.classList.remove('dark');}catch(e){}`}} />
         <link rel="manifest" href="/manifest.webmanifest" />
         <link rel="apple-touch-icon" href="https://placehold.co/180x180/png" />
       </head>

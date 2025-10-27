@@ -199,7 +199,7 @@ export default function Login() {
               {isLogin ? 'Sign In' : 'Create Account'}
             </h1>
             <p className="text-gray-600">
-              {isLogin ? 'Welcome back to Taliyo!' : 'Join Taliyo today!'}
+              {isLogin ? 'Welcome back to Taliyo Marketplace!' : 'Join Taliyo Marketplace today!'}
             </p>
           </div>
         </div>

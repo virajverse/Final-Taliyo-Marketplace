@@ -111,7 +111,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
           
           <Link href="/" className="flex-shrink-0">
             <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              Taliyo
+              Taliyo Marketplace
             </h1>
           </Link>
           
@@ -175,7 +175,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                Taliyo Menu
+                Taliyo Marketplace
               </h2>
               <button 
                 onClick={closeMenu}
@@ -213,7 +213,7 @@ export default function Header({ cartCount = 0 }: HeaderProps) {
                 </p>
                 <button
                   onClick={() => {
-                    const message = `Hi! I need help with Taliyo services.`;
+                    const message = `Hi! I need help with Taliyo Marketplace services.`;
                     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
                     if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
                     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;

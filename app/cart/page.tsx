@@ -65,7 +65,7 @@ export default function Cart() {
   const total = subtotal;
 
   const handleWhatsAppSupport = () => {
-    const message = `Hi! I need help with my cart on Taliyo.`;
+    const message = `Hi! I need help with my cart on Taliyo Marketplace.`;
     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
     if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;

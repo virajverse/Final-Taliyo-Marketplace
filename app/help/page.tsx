@@ -37,7 +37,7 @@ export default function Help() {
   const faqs: FAQ[] = [
     {
       id: '1',
-      question: 'How do I book a service on Taliyo?',
+      question: 'How do I book a service on Taliyo Marketplace?',
       answer: 'You can book a service by browsing our categories, selecting a service, and clicking "Book via WhatsApp". You\'ll be redirected to WhatsApp to complete your booking with our team.',
       category: 'booking'
     },
@@ -67,7 +67,7 @@ export default function Help() {
     },
     {
       id: '6',
-      question: 'How do I become a service provider on Taliyo?',
+      question: 'How do I become a service provider on Taliyo Marketplace?',
       answer: 'To become a service provider, you can apply through our partner registration process. We\'ll review your application, verify your credentials, and onboard you to our platform.',
       category: 'provider'
     }
@@ -90,7 +90,7 @@ export default function Help() {
       action: 'Chat Now',
       color: 'bg-green-500',
       onClick: () => {
-        const message = 'Hi! I need help with Taliyo services.';
+        const message = 'Hi! I need help with Taliyo Marketplace services.';
         const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
         if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
         const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
@@ -258,7 +258,7 @@ export default function Help() {
           </p>
           <button
             onClick={() => {
-              const message = 'Hi! I need help with Taliyo services. I couldn\'t find the answer to my question in the FAQ.';
+              const message = 'Hi! I need help with Taliyo Marketplace services. I couldn\'t find the answer to my question in the FAQ.';
               const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '917042523611';
               const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
               window.open(whatsappUrl, '_blank');

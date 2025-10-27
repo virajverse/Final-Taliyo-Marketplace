@@ -166,7 +166,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
       return;
     }
     
-    const message = `Hi! I need help with Taliyo services.`;
+    const message = `Hi! I need help with Taliyo Marketplace services.`;
     const supportWhatsapp = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP;
     if (!supportWhatsapp) { console.warn('Support WhatsApp not configured'); return; }
     const whatsappUrl = `https://wa.me/${supportWhatsapp}?text=${encodeURIComponent(message)}`;
@@ -289,7 +289,7 @@ export default function Home({ initialFeaturedServices = [], initialCategories =
         </div>
 
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Why Choose Taliyo?</h3>
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Why Choose Taliyo Marketplace?</h3>
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 text-blue-600 rounded-full">
